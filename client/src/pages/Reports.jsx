@@ -220,7 +220,7 @@ const Reports = () => {
             </div>
 
             {/* Profit & Loss Section */}
-            {selectedTypes.includes('Profit & Loss') && (
+            {(selectedTypes.includes('Profit & Loss') || selectedTypes.includes('Combined Financial')) && (
               <div className="mb-10">
                 <h3 className="section-title mb-4" style={{ fontSize: '18px', color: '#1a1a1a' }}>Profit & Loss Statement</h3>
                 <div className="grid grid-cols-3 gap-6">
@@ -243,8 +243,43 @@ const Reports = () => {
               </div>
             )}
 
+            {/* Revenue Summary Table */}
+            {(selectedTypes.includes('Revenue Summary') || selectedTypes.includes('Combined Financial')) && (
+              <div className="mb-10">
+                <h3 className="section-title mb-4">Revenue Summary (by Month)</h3>
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr className="bg-[#F8F7F2]">
+                        <th>MONTH</th>
+                        <th>BOOKING REVENUE</th>
+                        <th>OTHER INCOME</th>
+                        <th>TOTAL REVENUE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries((reportData.bookings || []).concat(reportData.income || []).reduce((acc, curr) => {
+                        const month = new Date(curr.date).toLocaleString('default', { month: 'long', year: 'numeric' });
+                        if (!acc[month]) acc[month] = { booking: 0, other: 0 };
+                        if (curr.agreed_total !== undefined) acc[month].booking += curr.agreed_total;
+                        else acc[month].other += (curr.amount || 0);
+                        return acc;
+                      }, {})).map(([month, values]) => (
+                        <tr key={month}>
+                          <td>{month}</td>
+                          <td>₹{values.booking.toLocaleString()}</td>
+                          <td>₹{values.other.toLocaleString()}</td>
+                          <td className="text-green-600 font-bold">₹{(values.booking + values.other).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {/* Booking Report Table */}
-            {selectedTypes.includes('Booking Report') && (
+            {(selectedTypes.includes('Booking Report') || selectedTypes.includes('Combined Financial')) && (
               <div className="mb-10">
                 <h3 className="section-title mb-4">Booking Report</h3>
                 <div className="table-container">
@@ -258,7 +293,6 @@ const Reports = () => {
                         <th>AGREED</th>
                         <th>ADVANCE</th>
                         <th>BALANCE</th>
-                        <th>STATUS</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -273,7 +307,37 @@ const Reports = () => {
                           <td className={b.remaining_balance > 0 ? 'text-red-500' : 'text-green-600'}>
                             ₹{b.remaining_balance.toLocaleString()}
                           </td>
-                          <td>{b.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Other Source of Income Report */}
+            {(selectedTypes.includes('Other Source of Income Report') || selectedTypes.includes('Combined Financial')) && (
+              <div className="mb-10">
+                <h3 className="section-title mb-4">Other Income Report</h3>
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr className="bg-[#F8F7F2]">
+                        <th>DATE</th>
+                        <th>TYPE</th>
+                        <th>AMOUNT</th>
+                        <th>PAYMENT</th>
+                        <th>REFERENCE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportData.income?.map(i => (
+                        <tr key={i.id}>
+                          <td>{new Date(i.date).toLocaleDateString('en-GB')}</td>
+                          <td>{i.type}</td>
+                          <td className="text-green-600 font-medium">₹{i.amount.toLocaleString()}</td>
+                          <td>{i.payment_mode}</td>
+                          <td>{i.reference || '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -283,7 +347,7 @@ const Reports = () => {
             )}
 
             {/* Expense Report Table */}
-            {selectedTypes.includes('Expense Report') && (
+            {(selectedTypes.includes('Expense Report') || selectedTypes.includes('Combined Financial')) && (
               <div className="mb-10">
                 <h3 className="section-title mb-4">Expense Report</h3>
                 <div className="table-container">
@@ -295,7 +359,6 @@ const Reports = () => {
                         <th>AMOUNT</th>
                         <th>PAYMENT</th>
                         <th>VENDOR</th>
-                        <th>DESCRIPTION</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -306,7 +369,6 @@ const Reports = () => {
                           <td className="text-red-600 font-medium">₹{e.amount.toLocaleString()}</td>
                           <td>{e.payment_mode}</td>
                           <td>{e.vendor}</td>
-                          <td>{e.description}</td>
                         </tr>
                       ))}
                     </tbody>
