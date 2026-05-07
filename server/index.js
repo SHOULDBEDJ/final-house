@@ -376,7 +376,7 @@ router.get('/bookings/availability', authenticateToken, async (req, res) => {
 
     // Get all confirmed bookings for relevant window
     const bookingsResult = await db.execute({
-      sql: "SELECT * FROM bookings WHERE status = 'confirmed' AND (date = ? OR date = ? OR date = ?)",
+      sql: "SELECT * FROM bookings WHERE status = 'confirmed' AND (check_in = ? OR check_in = ? OR check_in = ?)",
       args: [yesterdayStr, date, tomorrowStr]
     });
     const bookings = bookingsResult.rows;
@@ -424,10 +424,10 @@ router.get('/dashboard/stats', authenticateToken, async (req, res) => {
 
     const stats = await Promise.all([
       db.execute('SELECT COUNT(*) as count FROM bookings'),
-      db.execute({ sql: 'SELECT COUNT(*) as count FROM bookings WHERE date = ?', args: [today] }),
-      db.execute({ sql: 'SELECT COUNT(*) as count FROM bookings WHERE date >= ?', args: [monthStart] }),
-      db.execute({ sql: 'SELECT COUNT(*) as count FROM bookings WHERE date >= ?', args: [weekStart] }),
-      db.execute({ sql: "SELECT COUNT(*) as count FROM bookings WHERE status = 'confirmed' AND date > ?", args: [today] }),
+      db.execute({ sql: 'SELECT COUNT(*) as count FROM bookings WHERE check_in = ?', args: [today] }),
+      db.execute({ sql: 'SELECT COUNT(*) as count FROM bookings WHERE check_in >= ?', args: [monthStart] }),
+      db.execute({ sql: 'SELECT COUNT(*) as count FROM bookings WHERE check_in >= ?', args: [weekStart] }),
+      db.execute({ sql: "SELECT COUNT(*) as count FROM bookings WHERE status = 'confirmed' AND check_in > ?", args: [today] }),
       db.execute('SELECT SUM(amount) as total FROM income'),
       db.execute('SELECT SUM(amount) as total FROM expenses')
     ]);
@@ -597,8 +597,8 @@ router.post('/reports/generate', authenticateToken, async (req, res) => {
     if (types.includes('Booking Report') || types.includes('Profit & Loss') || types.includes('Combined Financial') || types.includes('Revenue Summary')) {
       let sql = 'SELECT * FROM bookings WHERE 1=1';
       const args = [];
-      if (dateFrom) { sql += ' AND date >= ?'; args.push(dateFrom); }
-      if (dateTo) { sql += ' AND date <= ?'; args.push(dateTo); }
+      if (dateFrom) { sql += ' AND check_in >= ?'; args.push(dateFrom); }
+      if (dateTo) { sql += ' AND check_in <= ?'; args.push(dateTo); }
       if (status && status !== 'All Statuses') { sql += ' AND status = ?'; args.push(status); }
       
       const result = await db.execute({ sql, args });
