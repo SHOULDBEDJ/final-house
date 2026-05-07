@@ -141,9 +141,9 @@ const Expenses = () => {
 
       {/* CHECK 2: Stat Cards */}
       <div className="grid grid-cols-3 gap-6 mb-8">
-        <StatCard icon={<Receipt size={24} />} value={`₹${summary.total.toLocaleString()}`} label="Total Expenses" isRed={true} accent="financial" style={{ borderLeft: '4px solid #DC3545' }} />
+        <StatCard icon={<Receipt size={24} />} value={`₹${summary.total.toLocaleString()}`} label="Total Expenses" isRed={true} accent="danger" />
         <StatCard icon={<ListIcon size={24} />} value={summary.count} label="Total Records" accent="pending" />
-        <StatCard icon={<Wallet size={24} />} value={`₹${filteredTotal.toLocaleString()}`} label="Filtered Amount" isRed={true} />
+        <StatCard icon={<Wallet size={24} />} value={`₹${filteredTotal.toLocaleString()}`} label="Filtered Amount" isRed={true} accent="danger" />
       </div>
 
       {/* CHECK 3: Filter Bar */}

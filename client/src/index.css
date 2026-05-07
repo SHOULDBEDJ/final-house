@@ -663,6 +663,10 @@ input:focus { outline: none; border-color: var(--amber); background-color: white
   border-left: 4px solid #198754 !important;
 }
 
+.accent-danger {
+  border-left: 4px solid #DC3545 !important;
+}
+
 .balance-red {
   color: #DC3545;
   font-weight: 600;
