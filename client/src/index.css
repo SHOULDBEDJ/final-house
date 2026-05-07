@@ -49,7 +49,7 @@ body {
 h1 { font-size: 26px; font-weight: 600; color: var(--amber); margin-bottom: 4px; }
 .subtitle { font-size: 14px; color: var(--text-muted); font-weight: 400; }
 .label-caps { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; color: var(--text-muted); text-transform: uppercase; }
-.body-text { font-size: 14px; weight: 400; color: #1a1a1a; }
+.body-text { font-size: 14px; font-weight: 400; color: #1a1a1a; }
 .stat-number { font-size: 26px; font-weight: 600; }
 
 /* Layout Structure */
@@ -128,7 +128,7 @@ h1 { font-size: 26px; font-weight: 600; color: var(--amber); margin-bottom: 4px;
 .nav-item:hover { background-color: rgba(255,255,255,0.06); color: var(--white); }
 
 .nav-item.active {
-  background-color: rgba(255,255,255,0.1);
+  background-color: rgba(255,255,255,0.08);
   color: var(--white);
   border-left: 3px solid #2E7D32; /* CHECK 1: 3px solid green left-border */
 }

@@ -629,6 +629,65 @@ app.post('/api/reports/generate', authenticateToken, async (req, res) => {
   }
 });
 
+// --- USERS ROUTES ---
+app.get('/api/users', authenticateToken, async (req, res) => {
+  try {
+    const result = await db.execute('SELECT id, username, name, role, photo, created_at FROM users ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/users', authenticateToken, async (req, res) => {
+  const { name, username, password, role } = req.body;
+  try {
+    const result = await db.execute({
+      sql: 'INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, ?)',
+      args: [name, username, password, role]
+    });
+    await logActivity(req.user.id, 'Create', 'Users', `Created new user: ${username} (${role})`, req.ip);
+    res.json({ id: Number(result.lastInsertRowid) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/users/:id', authenticateToken, async (req, res) => {
+  const { name, username, role, password } = req.body;
+  try {
+    let sql = 'UPDATE users SET name = ?, username = ?, role = ?';
+    const args = [name, username, role];
+    
+    if (password) {
+      sql += ', password = ?';
+      args.push(password);
+    }
+    
+    sql += ' WHERE id = ?';
+    args.push(req.params.id);
+
+    await db.execute({ sql, args });
+    await logActivity(req.user.id, 'Edit', 'Users', `Updated user details: ${username}`, req.ip);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/users/:id', authenticateToken, async (req, res) => {
+  try {
+    if (req.params.id === req.user.id.toString()) {
+      return res.status(400).json({ error: 'You cannot delete your own account' });
+    }
+    await db.execute({ sql: 'DELETE FROM users WHERE id = ?', args: [req.params.id] });
+    await logActivity(req.user.id, 'Delete', 'Users', `Deleted user ID: ${req.params.id}`, req.ip);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // --- PROFILE ROUTES ---
 app.get('/api/profile', authenticateToken, async (req, res) => {
   try {

@@ -28,6 +28,7 @@ import Reports from './pages/Reports';
 import SettingsPage from './pages/Settings';
 import Profile from './pages/Profile';
 import UsersPage from './pages/Users';
+import ActivityLog from './pages/ActivityLog';
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const location = useLocation();
@@ -172,7 +173,7 @@ function App() {
         <Route path="/expenses" element={<PrivateRoute><Expenses /></PrivateRoute>} />
         <Route path="/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
         <Route path="/users" element={<PrivateRoute><UsersPage /></PrivateRoute>} />
-        <Route path="/activity" element={<PrivateRoute><div className="card"><h1>Activity Log</h1><p className="subtitle">Track system events and actions</p></div></PrivateRoute>} />
+        <Route path="/activity" element={<PrivateRoute><ActivityLog /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
       </Routes>
