@@ -29,6 +29,17 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
+async function logActivity(userId, action, module, detail, ip) {
+  try {
+    await db.execute({
+      sql: 'INSERT INTO activity_logs (user_id, action, module, detail, ip_address) VALUES (?, ?, ?, ?, ?)',
+      args: [userId, action, module, detail, ip]
+    });
+  } catch (error) {
+    console.error('Logging error:', error);
+  }
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -63,7 +74,8 @@ app.post('/api/auth/login', async (req, res) => {
 
     if (user && user.password === password) { // In production, use bcrypt
       const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET);
-      res.json({ token, user: { id: user.id, username: user.username, name: user.name, role: user.role } });
+      await logActivity(user.id, 'Login', 'Auth', `User ${username} logged in`, req.ip);
+      res.json({ token, user: { id: user.id, username: username, name: user.name, role: user.role } });
     } else {
       res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -125,7 +137,9 @@ app.post('/api/bookings', authenticateToken, async (req, res) => {
       sql: 'INSERT INTO bookings (customer_name, customer_phone, check_in, check_out, total_amount, advance_paid, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
       args: [customer_name, customer_phone, check_in, check_out, total_amount, advance_paid, notes]
     });
-    res.status(201).json({ id: Number(result.lastInsertRowid) });
+    const bookingId = Number(result.lastInsertRowid);
+    await logActivity(req.user.id, 'Create', 'Bookings', `Created booking 16EYE${bookingId} for ${customer_name}`, req.ip);
+    res.status(201).json({ id: bookingId });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -149,6 +163,7 @@ app.delete('/api/bookings/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
     await db.execute({ sql: 'DELETE FROM bookings WHERE id = ?', args: [id] });
+    await logActivity(req.user.id, 'Delete', 'Bookings', `Deleted booking 16EYE${id}`, req.ip);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -219,6 +234,7 @@ app.post('/api/income', authenticateToken, async (req, res) => {
       sql: 'INSERT INTO income (amount, description, date, type, payment_mode, reference) VALUES (?, ?, ?, ?, ?, ?)',
       args: [amount, description, date, type, payment_mode, reference]
     });
+    await logActivity(req.user.id, 'Create', 'Income', `Added income: ₹${amount} (${type})`, req.ip);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -238,7 +254,15 @@ app.put('/api/income/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// --- EXPENSE ROUTES ---
+app.delete('/api/income/:id', authenticateToken, async (req, res) => {
+  try {
+    await db.execute({ sql: 'DELETE FROM income WHERE id = ?', args: [req.params.id] });
+    await logActivity(req.user.id, 'Delete', 'Income', `Deleted income record ID: ${req.params.id}`, req.ip);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 app.get('/api/expenses/summary', authenticateToken, async (req, res) => {
   try {
     const data = await Promise.all([
@@ -302,6 +326,7 @@ app.post('/api/expenses', authenticateToken, async (req, res) => {
       sql: 'INSERT INTO expenses (amount, description, date, type, payment_mode, vendor, reference) VALUES (?, ?, ?, ?, ?, ?, ?)',
       args: [amount, description, date, type, payment_mode, vendor, reference]
     });
+    await logActivity(req.user.id, 'Create', 'Expenses', `Added expense: ₹${amount} to ${vendor}`, req.ip);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -315,6 +340,15 @@ app.put('/api/expenses/:id', authenticateToken, async (req, res) => {
       sql: 'UPDATE expenses SET amount = ?, description = ?, date = ?, type = ?, payment_mode = ?, vendor = ?, reference = ? WHERE id = ?',
       args: [amount, description, date, type, payment_mode, vendor, reference, req.params.id]
     });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+app.delete('/api/expenses/:id', authenticateToken, async (req, res) => {
+  try {
+    await db.execute({ sql: 'DELETE FROM expenses WHERE id = ?', args: [req.params.id] });
+    await logActivity(req.user.id, 'Delete', 'Expenses', `Deleted expense record ID: ${req.params.id}`, req.ip);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -530,6 +564,59 @@ app.post('/api/reports/generate', authenticateToken, async (req, res) => {
     }
 
     res.json(reports);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- ACTIVITY LOGS ---
+app.get('/api/activity-logs', authenticateToken, async (req, res) => {
+  const { module, action, from, to, search, page = 1 } = req.query;
+  const limit = 50;
+  const offset = (page - 1) * limit;
+
+  let sql = 'SELECT al.*, u.username FROM activity_logs al LEFT JOIN users u ON al.user_id = u.id WHERE 1=1';
+  let countSql = 'SELECT COUNT(*) as count FROM activity_logs WHERE 1=1';
+  const args = [];
+
+  if (module && module !== 'All Modules') {
+    sql += ' AND module = ?';
+    countSql += ' AND module = ?';
+    args.push(module);
+  }
+  if (action && action !== 'All Actions') {
+    sql += ' AND action = ?';
+    countSql += ' AND action = ?';
+    args.push(action);
+  }
+  if (from) {
+    sql += ' AND timestamp >= ?';
+    countSql += ' AND timestamp >= ?';
+    args.push(from);
+  }
+  if (to) {
+    sql += ' AND timestamp <= ?';
+    countSql += ' AND timestamp <= ?';
+    args.push(to);
+  }
+  if (search) {
+    sql += ' AND (detail LIKE ? OR u.username LIKE ?)';
+    countSql += ' AND (detail LIKE ? OR (SELECT username FROM users WHERE id = user_id) LIKE ?)';
+    args.push(`%${search}%`, `%${search}%`);
+  }
+
+  sql += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
+  const queryArgs = [...args, limit, offset];
+
+  try {
+    const [logs, total] = await Promise.all([
+      db.execute({ sql, args: queryArgs }),
+      db.execute({ sql: countSql, args })
+    ]);
+    res.json({
+      logs: logs.rows,
+      total: total.rows[0].count
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

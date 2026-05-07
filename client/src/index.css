@@ -686,3 +686,70 @@ input:focus { outline: none; border-color: var(--amber); background-color: white
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.btn-pagination {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-pagination:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-pagination:hover:not(:disabled) {
+  border-color: #C4920B;
+  color: #C4920B;
+}
+
+.btn-page {
+  padding: 0 12px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  color: #555;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-page:hover {
+  border-color: #C4920B;
+}
+
+.btn-page-active {
+  padding: 0 12px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1C2D5E;
+  color: white;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #1C2D5E;
+}
+
+.avatar-circle {
+  background: #C4920B;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
