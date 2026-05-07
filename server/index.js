@@ -569,7 +569,82 @@ app.post('/api/reports/generate', authenticateToken, async (req, res) => {
   }
 });
 
-// --- ACTIVITY LOGS ---
+// --- PROFILE ROUTES ---
+app.get('/api/profile', authenticateToken, async (req, res) => {
+  try {
+    const result = await db.execute({
+      sql: 'SELECT id, username, name, role, photo, created_at FROM users WHERE id = ?',
+      args: [req.user.id]
+    });
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/profile', authenticateToken, async (req, res) => {
+  const { name, username } = req.body;
+  try {
+    await db.execute({
+      sql: 'UPDATE users SET name = ?, username = ? WHERE id = ?',
+      args: [name, username, req.user.id]
+    });
+    await logActivity(req.user.id, 'Edit', 'Users', 'Updated profile details', req.ip);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/profile/password', authenticateToken, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  try {
+    const result = await db.execute({
+      sql: 'SELECT password FROM users WHERE id = ?',
+      args: [req.user.id]
+    });
+    const user = result.rows[0];
+
+    if (user.password !== currentPassword) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    await db.execute({
+      sql: 'UPDATE users SET password = ? WHERE id = ?',
+      args: [newPassword, req.user.id]
+    });
+    await logActivity(req.user.id, 'Edit', 'Auth', 'Changed account password', req.ip);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/profile/photo', authenticateToken, async (req, res) => {
+  const { photo } = req.body; // Expecting base64 or URL
+  try {
+    await db.execute({
+      sql: 'UPDATE users SET photo = ? WHERE id = ?',
+      args: [photo, req.user.id]
+    });
+    await logActivity(req.user.id, 'Edit', 'Users', 'Updated profile photo', req.ip);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/profile/sessions', authenticateToken, async (req, res) => {
+  try {
+    const result = await db.execute({
+      sql: "SELECT timestamp, ip_address, detail FROM activity_logs WHERE user_id = ? AND action = 'Login' ORDER BY timestamp DESC LIMIT 3",
+      args: [req.user.id]
+    });
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 app.get('/api/activity-logs', authenticateToken, async (req, res) => {
   const { module, action, from, to, search, page = 1 } = req.query;
   const limit = 50;
