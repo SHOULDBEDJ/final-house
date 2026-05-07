@@ -14,11 +14,15 @@ import {
   MessageSquare
 } from 'lucide-react';
 
+import { useLocation } from 'react-router-dom';
+
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const location = useLocation();
+
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_phone: '',
@@ -28,6 +32,23 @@ const Bookings = () => {
     advance_paid: '',
     notes: ''
   });
+
+  // Handle click-to-book from dashboard
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const date = params.get('date');
+    const action = params.get('action');
+
+    if (action === 'new') {
+      setSelectedBooking(null);
+      setFormData(prev => ({
+        ...prev,
+        check_in: date || '',
+        check_out: date || ''
+      }));
+      setShowModal(true);
+    }
+  }, [location]);
 
   const fetchBookings = async () => {
     try {
