@@ -475,19 +475,60 @@ app.get('/api/bookings/:id/pdf', authenticateToken, async (req, res) => {
   }
 });
 
-// --- SETTINGS ---
-app.get('/api/settings', authenticateToken, async (req, res) => {
+// --- SETTINGS ROUTES ---
+app.get('/api/settings/time-slots', authenticateToken, async (req, res) => {
   try {
-    const result = await db.execute('SELECT * FROM settings');
+    const result = await db.execute('SELECT * FROM time_slots');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/settings/time-slots', authenticateToken, async (req, res) => {
+  const { name, startTime, endTime, crossesMidnight, color } = req.body;
+  try {
+    await db.execute({
+      sql: 'INSERT INTO time_slots (name, startTime, endTime, crossesMidnight, color) VALUES (?, ?, ?, ?, ?)',
+      args: [name, startTime, endTime, crossesMidnight ? 1 : 0, color]
+    });
+    await logActivity(req.user.id, 'Create', 'Settings', `Added time slot: ${name}`, req.ip);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/settings/time-slots/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const bookingCheck = await db.execute({
+      sql: 'SELECT COUNT(*) as count FROM bookings WHERE slot_id = ? AND status = "confirmed"',
+      args: [id]
+    });
+    if (bookingCheck.rows[0].count > 0) {
+      return res.status(400).json({ error: `This slot has ${bookingCheck.rows[0].count} active bookings. Delete anyway?`, code: 'HAS_BOOKINGS' });
+    }
+    await db.execute({ sql: 'DELETE FROM time_slots WHERE id = ?', args: [id] });
+    await logActivity(req.user.id, 'Delete', 'Settings', `Deleted time slot ID: ${id}`, req.ip);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/settings/identity', authenticateToken, async (req, res) => {
+  try {
+    const result = await db.execute('SELECT * FROM settings WHERE key IN ("house_name", "phone", "email", "address", "logo")');
     const settings = {};
-    result.rows.forEach(row => { settings[row.key] = row.value; });
+    result.rows.forEach(r => settings[r.key] = r.value);
     res.json(settings);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.post('/api/settings', authenticateToken, async (req, res) => {
+app.put('/api/settings/identity', authenticateToken, async (req, res) => {
   const settings = req.body;
   try {
     for (const [key, value] of Object.entries(settings)) {
@@ -496,6 +537,17 @@ app.post('/api/settings', authenticateToken, async (req, res) => {
         args: [key, value]
       });
     }
+    await logActivity(req.user.id, 'Edit', 'Settings', 'Updated farmhouse identity', req.ip);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/settings/logo', authenticateToken, async (req, res) => {
+  try {
+    await db.execute({ sql: 'UPDATE settings SET value = "" WHERE key = "logo"', args: [] });
+    await logActivity(req.user.id, 'Delete', 'Settings', 'Reset system logo', req.ip);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
