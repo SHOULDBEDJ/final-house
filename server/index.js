@@ -156,9 +156,56 @@ app.delete('/api/bookings/:id', authenticateToken, async (req, res) => {
 });
 
 // --- INCOME ROUTES ---
-app.get('/api/income', authenticateToken, async (req, res) => {
+app.get('/api/income/summary', authenticateToken, async (req, res) => {
   try {
-    const result = await db.execute('SELECT * FROM income ORDER BY date DESC');
+    const data = await Promise.all([
+      db.execute('SELECT SUM(amount) as total FROM income'),
+      db.execute('SELECT COUNT(*) as count FROM income')
+    ]);
+    res.json({
+      total: data[0].rows[0].total || 0,
+      count: data[1].rows[0].count || 0
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/settings/income-types', authenticateToken, async (req, res) => {
+  try {
+    const result = await db.execute('SELECT name FROM income_types');
+    res.json(result.rows.map(r => r.name));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/income', authenticateToken, async (req, res) => {
+  const { type, from, to, search } = req.query;
+  let sql = 'SELECT * FROM income WHERE 1=1';
+  const args = [];
+
+  if (type && type !== 'All Types') {
+    sql += ' AND type = ?';
+    args.push(type);
+  }
+  if (from) {
+    sql += ' AND date >= ?';
+    args.push(from);
+  }
+  if (to) {
+    sql += ' AND date <= ?';
+    args.push(to);
+  }
+  if (search) {
+    sql += ' AND (description LIKE ? OR reference LIKE ?)';
+    args.push(`%${search}%`, `%${search}%`);
+  }
+
+  sql += ' ORDER BY date DESC';
+
+  try {
+    const result = await db.execute({ sql, args });
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -166,13 +213,26 @@ app.get('/api/income', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/income', authenticateToken, async (req, res) => {
-  const { category, amount, description, date } = req.body;
+  const { amount, description, date, type, payment_mode, reference } = req.body;
   try {
     await db.execute({
-      sql: 'INSERT INTO income (category, amount, description, date) VALUES (?, ?, ?, ?)',
-      args: [category, amount, description, date]
+      sql: 'INSERT INTO income (amount, description, date, type, payment_mode, reference) VALUES (?, ?, ?, ?, ?, ?)',
+      args: [amount, description, date, type, payment_mode, reference]
     });
-    res.status(201).json({ success: true });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/income/:id', authenticateToken, async (req, res) => {
+  const { amount, description, date, type, payment_mode, reference } = req.body;
+  try {
+    await db.execute({
+      sql: 'UPDATE income SET amount = ?, description = ?, date = ?, type = ?, payment_mode = ?, reference = ? WHERE id = ?',
+      args: [amount, description, date, type, payment_mode, reference, req.params.id]
+    });
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
