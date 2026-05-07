@@ -14,6 +14,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 app.use(cors());
 app.use(express.json());
 
+// Root Health Check
+app.get('/', (req, res) => {
+  res.json({ status: 'success', message: '16 Eyes Farm House API is running' });
+});
+
 // Auth Middleware
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
