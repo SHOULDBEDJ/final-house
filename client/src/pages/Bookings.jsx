@@ -8,7 +8,10 @@ import {
   Edit2, 
   Trash2, 
   X,
-  QrCode
+  QrCode,
+  Eye,
+  Check,
+  MessageSquare
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -102,81 +105,100 @@ const Bookings = () => {
     setShowModal(true);
   };
 
-  const openQR = (booking) => {
-    setSelectedBooking(booking);
-    setShowQRModal(true);
+  const getInitialsColor = (name) => {
+    const colors = ['#1C2D5E', '#C4920B', '#198754', '#8B1717'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
   };
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1>Bookings</h1>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1>Bookings</h1>
+          <p className="subtitle">Manage and track guest reservations</p>
+        </div>
         <button className="btn-primary" onClick={() => { setSelectedBooking(null); setShowModal(true); }}>
-          <Plus size={20} /> New Booking
+          <Plus size={18} /> ADD NEW BOOKING
         </button>
       </div>
 
-      <div className="card glass">
-        <div className="flex items-center gap-2 mb-4">
-          <div style={{ position: 'relative', flex: 1 }}>
-            <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input type="text" placeholder="Search bookings..." style={{ paddingLeft: '2.5rem' }} />
+      <div className="card" style={{ padding: '0' }}>
+        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-light)' }}>
+          <div style={{ position: 'relative', maxWidth: '400px' }}>
+            <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input 
+              type="text" 
+              placeholder="Search by customer name or ID..." 
+              style={{ paddingLeft: '40px', backgroundColor: '#F0EEE9' }} 
+            />
           </div>
         </div>
 
         {loading ? (
-          <p className="text-center p-4">Loading bookings...</p>
+          <p className="text-center p-8">Loading bookings...</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table>
               <thead>
                 <tr>
-                  <th>Customer</th>
-                  <th>Dates</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>CUSTOMER</th>
+                  <th>BOOKING ID</th>
+                  <th>DATES</th>
+                  <th>AMOUNT</th>
+                  <th>STATUS</th>
+                  <th>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
                 {bookings.map((booking) => (
                   <tr key={booking.id}>
                     <td>
+                      <div className="flex items-center gap-3">
+                        <div style={{ 
+                          width: '34px', height: '34px', borderRadius: '50%', 
+                          backgroundColor: getInitialsColor(booking.customer_name),
+                          color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '13px', fontWeight: 500
+                        }}>
+                          {booking.customer_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 500 }}>{booking.customer_name}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{booking.customer_phone}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <a href="#" className="order-link">#{1000 + booking.id}</a>
+                    </td>
+                    <td>
+                      <div style={{ fontSize: '13px' }}>
+                        {new Date(booking.check_in).toLocaleDateString('en-GB')} - {new Date(booking.check_out).toLocaleDateString('en-GB')}
+                      </div>
+                    </td>
+                    <td>
                       <div>
-                        <strong>{booking.customer_name}</strong>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{booking.customer_phone}</p>
+                        <div style={{ fontWeight: 600 }}>₹{booking.total_amount.toLocaleString()}</div>
+                        <div className="text-paid" style={{ fontSize: '11px' }}>Paid: ₹{booking.advance_paid.toLocaleString()}</div>
+                        {booking.total_amount - booking.advance_paid > 0 && (
+                          <div className="text-pending" style={{ fontSize: '11px' }}>Due: ₹{(booking.total_amount - booking.advance_paid).toLocaleString()}</div>
+                        )}
                       </div>
                     </td>
                     <td>
-                      <div style={{ fontSize: '0.875rem' }}>
-                        {new Date(booking.check_in).toLocaleDateString()} - {new Date(booking.check_out).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td>
-                      <div>
-                        <strong>₹{booking.total_amount}</strong>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--success)' }}>Paid: ₹{booking.advance_paid}</p>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`badge badge-${booking.status}`}>
-                        {booking.status}
+                      <span className={`badge badge-${booking.status === 'confirmed' ? 'confirmed' : 'pending'}`}>
+                        {booking.status.toUpperCase()}
                       </span>
                     </td>
                     <td>
                       <div className="flex gap-2">
-                        <button className="btn-outline" style={{ padding: '0.5rem' }} onClick={() => handleEdit(booking)} title="Edit">
-                          <Edit2 size={16} />
-                        </button>
-                        <button className="btn-outline" style={{ padding: '0.5rem' }} onClick={() => openQR(booking)} title="QR Code">
-                          <QrCode size={16} />
-                        </button>
-                        <button className="btn-outline" style={{ padding: '0.5rem' }} onClick={() => downloadPDF(booking.id)} title="Download PDF">
-                          <Download size={16} />
-                        </button>
-                        <button className="btn-outline" style={{ padding: '0.5rem', color: 'var(--error)' }} onClick={() => handleDelete(booking.id)} title="Delete">
-                          <Trash2 size={16} />
-                        </button>
+                        <button className="btn-icon" onClick={() => {}} title="View"><Eye size={14} /></button>
+                        <button className="btn-icon" onClick={() => handleEdit(booking)} title="Edit"><Edit2 size={14} /></button>
+                        <button className="btn-icon" onClick={() => {}} title="Confirm"><Check size={14} /></button>
+                        <button className="btn-icon" onClick={() => {}} title="Message"><MessageSquare size={14} /></button>
+                        <button className="btn-icon" onClick={() => handleDelete(booking.id)} style={{ color: 'var(--danger)' }} title="Delete"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -189,19 +211,16 @@ const Bookings = () => {
 
       {/* Booking Modal */}
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="card glass" style={{ width: '100%', maxWidth: '600px', position: 'relative' }}>
-            <button 
-              onClick={() => setShowModal(false)} 
-              style={{ position: 'absolute', right: '1rem', top: '1rem', background: 'transparent' }}
-            >
-              <X size={24} />
-            </button>
-            <h2 className="mb-4">{selectedBooking ? 'Edit Booking' : 'New Booking'}</h2>
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h2>{selectedBooking ? 'Edit Booking' : 'New Booking'}</h2>
+              <X className="modal-close" onClick={() => setShowModal(false)} />
+            </div>
             <form onSubmit={handleSubmit}>
-              <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                <div className="mb-4">
-                  <label className="mb-2 block">Customer Name</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div className="form-group">
+                  <label>Customer Name</label>
                   <input 
                     type="text" 
                     value={formData.customer_name}
@@ -209,8 +228,8 @@ const Bookings = () => {
                     required 
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="mb-2 block">Customer Phone</label>
+                <div className="form-group">
+                  <label>Customer Phone</label>
                   <input 
                     type="text" 
                     value={formData.customer_phone}
@@ -218,9 +237,9 @@ const Bookings = () => {
                   />
                 </div>
               </div>
-              <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                <div className="mb-4">
-                  <label className="mb-2 block">Check-in Date</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div className="form-group">
+                  <label>Check-in Date</label>
                   <input 
                     type="date" 
                     value={formData.check_in}
@@ -228,8 +247,8 @@ const Bookings = () => {
                     required 
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="mb-2 block">Check-out Date</label>
+                <div className="form-group">
+                  <label>Check-out Date</label>
                   <input 
                     type="date" 
                     value={formData.check_out}
@@ -238,9 +257,9 @@ const Bookings = () => {
                   />
                 </div>
               </div>
-              <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                <div className="mb-4">
-                  <label className="mb-2 block">Total Amount</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div className="form-group">
+                  <label>Total Amount</label>
                   <input 
                     type="number" 
                     value={formData.total_amount}
@@ -248,8 +267,8 @@ const Bookings = () => {
                     required 
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="mb-2 block">Advance Paid</label>
+                <div className="form-group">
+                  <label>Advance Paid</label>
                   <input 
                     type="number" 
                     value={formData.advance_paid}
@@ -257,43 +276,20 @@ const Bookings = () => {
                   />
                 </div>
               </div>
-              <div className="mb-4">
-                <label className="mb-2 block">Notes</label>
+              <div className="form-group">
+                <label>Notes</label>
                 <textarea 
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
                   rows={3}
+                  style={{ height: 'auto', padding: '12px' }}
                 ></textarea>
               </div>
-              <button type="submit" className="btn-primary w-full justify-center">
-                {selectedBooking ? 'Update Booking' : 'Create Booking'}
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
+                <button type="button" className="btn-danger" onClick={() => setShowModal(false)}>CANCEL</button>
+                <button type="submit" className="btn-primary">SAVE BOOKING</button>
+              </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* QR Modal */}
-      {showQRModal && selectedBooking && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
-          <div className="card glass" style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
-            <button 
-              onClick={() => setShowQRModal(false)} 
-              style={{ position: 'absolute', right: '1rem', top: '1rem', background: 'transparent' }}
-            >
-              <X size={24} />
-            </button>
-            <h2 className="mb-4">Payment QR Code</h2>
-            <div style={{ background: 'white', padding: '1rem', borderRadius: 'var(--radius)', display: 'inline-block' }}>
-              <QRCodeSVG 
-                value={`upi://pay?pa=your-upi-id@bank&pn=16Eyes&am=${selectedBooking.total_amount - selectedBooking.advance_paid}&cu=INR`} 
-                size={256}
-              />
-            </div>
-            <div className="mt-4">
-              <p>Amount to Pay: <strong>₹{selectedBooking.total_amount - selectedBooking.advance_paid}</strong></p>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Scan with any UPI App</p>
-            </div>
           </div>
         </div>
       )}

@@ -6,32 +6,33 @@ import {
   TrendingDown, 
   Clock,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Users,
+  CheckCircle2
 } from 'lucide-react';
 
-const StatCard = ({ title, value, icon, color, trend }) => (
-  <div className="card glass">
-    <div className="flex justify-between items-center mb-4">
-      <div style={{ 
-        padding: '0.75rem', 
-        backgroundColor: `${color}20`, 
-        borderRadius: 'var(--radius)',
-        color: color
-      }}>
-        {icon}
-      </div>
-      {trend && (
-        <span className="flex items-center gap-1" style={{ 
-          fontSize: '0.75rem', 
-          color: trend > 0 ? 'var(--success)' : 'var(--error)' 
-        }}>
-          {trend > 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-          {Math.abs(trend)}%
-        </span>
-      )}
+const StatCard = ({ title, value, icon, accent, trend }) => (
+  <div className={`card stat-card accent-${accent}`}>
+    <div className="stat-icon-circle" style={{ 
+      backgroundColor: accent === 'amber' ? 'rgba(196, 146, 11, 0.1)' : 'rgba(25, 135, 84, 0.1)',
+      color: accent === 'amber' ? 'var(--amber)' : 'var(--green)'
+    }}>
+      {icon}
     </div>
-    <h3 style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>{title}</h3>
-    <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{value}</p>
+    <div className="stat-content">
+      <span className="number">{value}</span>
+      <span className="label">{title}</span>
+    </div>
+    {trend && (
+      <div style={{ 
+        position: 'absolute', right: '20px', top: '20px', 
+        fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '2px',
+        color: trend > 0 ? 'var(--green)' : 'var(--red)'
+      }}>
+        {trend > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+        {Math.abs(trend)}%
+      </div>
+    )}
   </div>
 );
 
@@ -57,60 +58,65 @@ const Dashboard = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1>Dashboard</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Welcome back, Admin</p>
+      <div className="mb-6">
+        <h1>Dashboard Overview</h1>
+        <p className="subtitle">Real-time statistics for THE 16 EYES Farm House</p>
       </div>
 
-      <div className="grid">
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
         <StatCard 
-          title="Total Bookings" 
+          title="TOTAL BOOKINGS" 
           value={stats.totalBookings} 
-          icon={<CalendarDays size={24} />} 
-          color="#6366f1"
+          icon={<CalendarDays size={20} />} 
+          accent="amber"
           trend={12}
         />
         <StatCard 
-          title="Total Income" 
-          value={`₹${stats.totalIncome}`} 
-          icon={<TrendingUp size={24} />} 
-          color="#10b981"
+          title="CONFIRMED" 
+          value={stats.totalBookings - stats.pendingBookings} 
+          icon={<CheckCircle2 size={20} />} 
+          accent="green"
+        />
+        <StatCard 
+          title="TOTAL REVENUE" 
+          value={`₹${stats.totalIncome.toLocaleString()}`} 
+          icon={<TrendingUp size={20} />} 
+          accent="green"
           trend={8}
         />
         <StatCard 
-          title="Total Expenses" 
-          value={`₹${stats.totalExpenses}`} 
-          icon={<TrendingDown size={24} />} 
-          color="#ef4444"
-          trend={-5}
-        />
-        <StatCard 
-          title="Pending Bookings" 
+          title="PENDING PAYMENTS" 
           value={stats.pendingBookings} 
-          icon={<Clock size={24} />} 
-          color="#f59e0b"
+          icon={<Clock size={20} />} 
+          accent="amber"
         />
       </div>
 
-      <div className="grid mt-4" style={{ gridTemplateColumns: '2fr 1fr' }}>
-        <div className="card glass">
-          <div className="flex justify-between items-center mb-4">
-            <h2>Recent Activity</h2>
-            <button className="btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.75rem' }}>View All</button>
+      <div className="grid mt-6" style={{ gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+        <div className="card">
+          <div className="flex justify-between items-center mb-6">
+            <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Recent Activity</h2>
+            <button className="btn-amber" style={{ fontSize: '12px' }}>View All</button>
           </div>
           <div className="flex flex-col gap-4">
-            <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>
+            <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px' }}>
               No recent activity found.
             </p>
           </div>
         </div>
 
-        <div className="card glass">
-          <h2>Quick Actions</h2>
-          <div className="flex flex-col gap-2 mt-4">
-            <button className="btn-primary w-full">New Booking</button>
-            <button className="btn-outline w-full">Add Expense</button>
-            <button className="btn-outline w-full">Generate Report</button>
+        <div className="card">
+          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '20px' }}>Quick Actions</h2>
+          <div className="flex flex-col gap-3">
+            <button className="btn-primary w-full" style={{ padding: '12px' }}>
+              <span style={{ fontSize: '18px' }}>+</span> NEW BOOKING
+            </button>
+            <button className="btn-primary w-full" style={{ padding: '12px', background: 'transparent', border: '1px solid var(--navy)', color: 'var(--navy)' }}>
+              RECORD INCOME
+            </button>
+            <button className="btn-danger w-full" style={{ padding: '12px' }}>
+              ADD EXPENSE
+            </button>
           </div>
         </div>
       </div>

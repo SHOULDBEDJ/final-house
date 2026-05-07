@@ -44,36 +44,39 @@ const Income = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1>Income</h1>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1>Income</h1>
+          <p className="subtitle">Track and manage venue revenue</p>
+        </div>
         <button className="btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={20} /> Add Income
+          <Plus size={18} /> RECORD INCOME
         </button>
       </div>
 
-      <div className="card glass">
+      <div className="card" style={{ padding: '0' }}>
         <div style={{ overflowX: 'auto' }}>
           <table>
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Category</th>
-                <th>Description</th>
-                <th>Amount</th>
+                <th>DATE</th>
+                <th>CATEGORY</th>
+                <th>DESCRIPTION</th>
+                <th>AMOUNT</th>
               </tr>
             </thead>
             <tbody>
               {data.map((item) => (
                 <tr key={item.id}>
-                  <td>{new Date(item.date).toLocaleDateString()}</td>
-                  <td><span className="badge badge-confirmed">{item.category}</span></td>
-                  <td>{item.description}</td>
-                  <td style={{ color: 'var(--success)', fontWeight: 'bold' }}>+₹{item.amount}</td>
+                  <td>{new Date(item.date).toLocaleDateString('en-GB')}</td>
+                  <td><span className="badge badge-confirmed">{item.category.toUpperCase()}</span></td>
+                  <td style={{ color: 'var(--text-muted)' }}>{item.description}</td>
+                  <td style={{ color: 'var(--green)', fontWeight: 600 }}>+₹{item.amount.toLocaleString()}</td>
                 </tr>
               ))}
               {data.length === 0 && !loading && (
                 <tr>
-                  <td colSpan="4" className="text-center">No records found</td>
+                  <td colSpan="4" className="text-center" style={{ padding: '40px' }}>No records found</td>
                 </tr>
               )}
             </tbody>
@@ -82,36 +85,39 @@ const Income = () => {
       </div>
 
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
-          <div className="card glass" style={{ width: '100%', maxWidth: '450px' }}>
-            <div className="flex justify-between items-center mb-4">
-              <h2>Add Income</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'transparent' }}><X size={24} /></button>
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '450px' }}>
+            <div className="modal-header">
+              <h2>Record Income</h2>
+              <X className="modal-close" onClick={() => setShowModal(false)} />
             </div>
             <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="mb-2 block">Date</label>
+              <div className="form-group">
+                <label>Transaction Date</label>
                 <input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} required />
               </div>
-              <div className="mb-4">
-                <label className="mb-2 block">Category</label>
+              <div className="form-group">
+                <label>Category</label>
                 <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} required>
                   <option value="">Select Category</option>
-                  <option value="Booking">Booking</option>
-                  <option value="Event">Event</option>
-                  <option value="Food">Food</option>
-                  <option value="Other">Other</option>
+                  <option value="Booking">Booking Payment</option>
+                  <option value="Event">Event Fees</option>
+                  <option value="Food">Food & Catering</option>
+                  <option value="Other">Other Revenue</option>
                 </select>
               </div>
-              <div className="mb-4">
-                <label className="mb-2 block">Amount</label>
+              <div className="form-group">
+                <label>Amount (₹)</label>
                 <input type="number" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required />
               </div>
-              <div className="mb-4">
-                <label className="mb-2 block">Description</label>
-                <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} rows={3}></textarea>
+              <div className="form-group">
+                <label>Description</label>
+                <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} rows={3} style={{ height: 'auto', padding: '12px' }}></textarea>
               </div>
-              <button type="submit" className="btn-primary w-full justify-center">Record Income</button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
+                <button type="button" className="btn-danger" onClick={() => setShowModal(false)}>CANCEL</button>
+                <button type="submit" className="btn-primary">SAVE RECORD</button>
+              </div>
             </form>
           </div>
         </div>

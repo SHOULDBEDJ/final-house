@@ -1,83 +1,152 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import api from '../api';
-import { toast } from 'react-hot-toast';
-import { LogIn, Lock, User } from 'lucide-react';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  // CHECK 10: Route Guard - Auto-redirect if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem('farmhouse_token');
+    if (token) {
+      navigate('/');
+    }
+
+    // CHECK 11: Remember Me Persistence - Read stored user
+    const rememberedUser = localStorage.getItem('farmhouse_remembered_user');
+    if (rememberedUser) {
+      setUsername(rememberedUser);
+      setRememberMe(true);
+    }
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError('');
+    
+    // CHECK 9: Basic Validation
+    if (!username || !password) {
+      setError('Please enter both username and password.');
+      return;
+    }
+
     setLoading(true);
     try {
+      // CHECK 9: POST /api/auth/login
       const response = await api.post('/auth/login', { username, password });
-      localStorage.setItem('token', response.data.token);
+      
+      // Success: Store JWT as "farmhouse_token"
+      localStorage.setItem('farmhouse_token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      toast.success('Login successful!');
+
+      // CHECK 11: Handle Remember Me
+      if (rememberMe) {
+        localStorage.setItem('farmhouse_remembered_user', username);
+      } else {
+        localStorage.removeItem('farmhouse_remembered_user');
+      }
+
       navigate('/');
-    } catch (error) {
-      toast.error(error.response?.data?.error || 'Login failed');
+    } catch (err) {
+      // CHECK 9: Handle 401/error
+      setError('Invalid username or password.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      height: '100vh',
-      background: 'linear-gradient(135deg, var(--bg-dark) 0%, #1e1b4b 100%)'
-    }}>
-      <div className="card glass" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
-        <div className="text-center mb-4">
-          <h1 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>16 Eyes</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Sign in to manage your farmhouse</p>
+    <div className="login-page">
+      <div className="login-card">
+        {/* CHECK 3: Logo Block */}
+        <div className="login-logo-circle">
+          16
         </div>
+        <div className="login-title">
+          Booking & Financial Management
+        </div>
+
+        {/* CHECK 7: Error Message */}
+        {error && (
+          <div className="error-card">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleLogin}>
-          <div className="mb-4">
-            <label className="flex items-center gap-2 mb-2" style={{ fontSize: '0.875rem' }}>
-              <User size={16} /> Username
-            </label>
+          {/* CHECK 4: Username Field */}
+          <div className="form-group">
+            <label>Username</label>
             <input 
-              type="text" 
-              placeholder="Enter username" 
+              type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              required
+              placeholder="Enter your username"
+              autoComplete="username"
             />
           </div>
-          <div className="mb-4">
-            <label className="flex items-center gap-2 mb-2" style={{ fontSize: '0.875rem' }}>
-              <Lock size={16} /> Password
-            </label>
+
+          {/* CHECK 4: Password Field */}
+          <div className="form-group" style={{ marginBottom: '16px' }}>
+            <label>Password</label>
+            <div className="input-with-icon">
+              <input 
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                autoComplete="current-password"
+              />
+              <button 
+                type="button" 
+                className="input-icon-btn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          {/* CHECK 5: Remember Me */}
+          <div className="flex items-center gap-2 mb-4" style={{ cursor: 'pointer' }} onClick={() => setRememberMe(!rememberMe)}>
             <input 
-              type="password" 
-              placeholder="Enter password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              type="checkbox" 
+              checked={rememberMe}
+              onChange={() => {}} // Handled by div click
+              style={{ width: '14px', height: '14px', accentColor: 'var(--navy)', cursor: 'pointer' }}
             />
+            <span style={{ fontSize: '13px', color: '#555' }}>Remember me</span>
           </div>
+
+          {/* CHECK 6: Submit Button */}
           <button 
             type="submit" 
-            className="btn-primary w-full justify-center mt-4"
+            className="btn-primary w-full justify-center"
+            style={{ height: '46px', fontSize: '15px' }}
             disabled={loading}
           >
-            <LogIn size={20} />
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? (
+              <>
+                <div className="spinner" />
+                <span>Signing in...</span>
+              </>
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
-        <div className="text-center mt-4">
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Default: admin / admin123
-          </p>
-        </div>
+      </div>
+
+      {/* CHECK 8: Footer Text */}
+      <div className="login-footer">
+        THE 16 EYES Farm House v1.0 | 🌿 16 Eyes Farmhouse
       </div>
     </div>
   );
