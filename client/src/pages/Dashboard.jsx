@@ -192,13 +192,13 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Cards (Check 7) */}
-      <div className="grid mb-6" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCard title="Total Bookings" value={stats.totalBookings} icon={<Layout size={20} />} accent="var(--navy)" />
         <StatCard title="Today's Bookings" value={stats.todayBookings} icon={<CalendarDays size={20} />} accent="var(--navy)" />
         <StatCard title="Monthly Bookings" value={stats.monthlyBookings} icon={<TrendingUp size={20} />} accent="var(--navy)" />
         <StatCard title="This Week's Bookings" value={stats.weeklyBookings} icon={<CheckCircle size={20} />} accent="var(--navy)" />
       </div>
-      <div className="grid mb-8" style={{ gridTemplateColumns: '1fr', gap: '24px' }}>
+      <div className="grid grid-cols-1 gap-6 mb-8">
         <StatCard title="Upcoming Bookings" value={stats.upcomingBookings} icon={<Clock size={20} />} accent="var(--navy)" />
       </div>
 

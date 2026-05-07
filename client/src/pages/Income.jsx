@@ -64,8 +64,8 @@ const Income = () => {
 
       const [listRes, summaryRes, typesRes] = await Promise.all([
         api.get(`/income?${query}`),
-        api.get('/api/income/summary'),
-        api.get('/api/settings/income-types')
+        api.get('/income/summary'),
+        api.get('/settings/income-types')
       ]);
 
       setIncomeList(listRes.data);
@@ -92,7 +92,7 @@ const Income = () => {
         await api.put(`/api/income/${selectedIncome.id}`, formData);
         toast.success('Income record updated');
       } else {
-        await api.post('/api/income', formData);
+        await api.post('/income', formData);
         toast.success('Income record added');
       }
       setShowModal(false);

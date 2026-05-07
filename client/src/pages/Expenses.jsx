@@ -64,8 +64,8 @@ const Expenses = () => {
 
       const [listRes, summaryRes, typesRes] = await Promise.all([
         api.get(`/expenses?${query}`),
-        api.get('/api/expenses/summary'),
-        api.get('/api/settings/expense-types')
+        api.get('/expenses/summary'),
+        api.get('/settings/expense-types')
       ]);
 
       setExpenseList(listRes.data);
@@ -92,7 +92,7 @@ const Expenses = () => {
         await api.put(`/api/expenses/${selectedExpense.id}`, formData);
         toast.success('Expense record updated');
       } else {
-        await api.post('/api/expenses', formData);
+        await api.post('/expenses', formData);
         toast.success('Expense record added');
       }
       setShowModal(false);

@@ -75,7 +75,7 @@ const Bookings = () => {
     try {
       const [bookingsRes, summaryRes] = await Promise.all([
         api.get('/bookings'),
-        api.get('/api/bookings/summary')
+        api.get('/bookings/summary')
       ]);
       setBookings(bookingsRes.data);
       setSummary(summaryRes.data);

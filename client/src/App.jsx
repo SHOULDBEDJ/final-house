@@ -15,7 +15,8 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronLeft,
-  Menu
+  Menu,
+  X
 } from 'lucide-react';
 
 // Pages
@@ -30,7 +31,7 @@ import Profile from './pages/Profile';
 import UsersPage from './pages/Users';
 import ActivityLog from './pages/ActivityLog';
 
-const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
+const Sidebar = ({ isCollapsed, setIsCollapsed, mobileOpen, setMobileOpen }) => {
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -53,63 +54,75 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   ];
 
   return (
-    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      {/* CHECK 1: Top Logo Section */}
-      <div className="sidebar-logo">
-        <div style={{ 
-          minWidth: '32px', height: '32px', borderRadius: '4px', background: 'var(--amber)', 
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' 
-        }}>16</div>
-        {!isCollapsed && <span style={{ fontWeight: 600, fontSize: '15px', whiteSpace: 'nowrap' }}>16 EYES Farm House</span>}
-      </div>
-
-      {/* Nav Menu */}
-      <div className="nav-menu">
-        {navItems.map((item) => (
-          <Link 
-            key={item.path} 
-            to={item.path} 
-            className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
-            title={isCollapsed ? item.label : ''}
-          >
-            {React.cloneElement(item.icon, { size: 18 })}
-            {!isCollapsed && <span>{item.label}</span>}
-          </Link>
-        ))}
-      </div>
-
-      {/* CHECK 1: Bottom Toggle & User Info */}
-      <div className="sidebar-footer">
-        <div className="flex items-center gap-3 w-full">
-          <div className="user-avatar" style={{ minWidth: '32px' }}>
-            {user.username?.charAt(0).toUpperCase() || 'A'}
-          </div>
-          {!isCollapsed && (
-            <div className="user-info">
-              <span className="username">{user.name || user.username || 'Admin'}</span>
-              <span className="role">SuperAdmin</span>
-            </div>
-          )}
-          {!isCollapsed && (
-            <button onClick={handleLogout} style={{ marginLeft: 'auto', background: 'none', color: 'var(--nav-text)' }}>
-              <LogOut size={16} />
+    <>
+      {/* Mobile Overlay */}
+      {mobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-[950] lg:hidden" 
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+      
+      <div className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
+        <div className="sidebar-logo">
+          <div style={{ 
+            minWidth: '32px', height: '32px', borderRadius: '4px', background: 'var(--amber)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' 
+          }}>16</div>
+          {(!isCollapsed || mobileOpen) && <span style={{ fontWeight: 600, fontSize: '15px', whiteSpace: 'nowrap' }}>16 EYES Farm House</span>}
+          {mobileOpen && (
+            <button onClick={() => setMobileOpen(false)} className="ml-auto lg:hidden text-white">
+              <X size={20} />
             </button>
           )}
         </div>
+
+        <div className="nav-menu">
+          {navItems.map((item) => (
+            <Link 
+              key={item.path} 
+              to={item.path} 
+              className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+              onClick={() => setMobileOpen(false)}
+              title={isCollapsed ? item.label : ''}
+            >
+              {React.cloneElement(item.icon, { size: 18 })}
+              {(!isCollapsed || mobileOpen) && <span>{item.label}</span>}
+            </Link>
+          ))}
+        </div>
+
+        <div className="sidebar-footer">
+          <div className="flex items-center gap-3 w-full">
+            <div className="user-avatar" style={{ minWidth: '32px' }}>
+              {user.username?.charAt(0).toUpperCase() || 'A'}
+            </div>
+            {(!isCollapsed || mobileOpen) && (
+              <div className="user-info">
+                <span className="username">{user.name || user.username || 'Admin'}</span>
+                <span className="role">SuperAdmin</span>
+              </div>
+            )}
+            {(!isCollapsed || mobileOpen) && (
+              <button onClick={handleLogout} style={{ marginLeft: 'auto', background: 'none', color: 'var(--nav-text)' }}>
+                <LogOut size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+        
+        <button 
+          className="collapse-toggle-btn hidden lg:flex"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
       </div>
-      
-      {/* Collapse Toggle Arrow */}
-      <button 
-        className="collapse-toggle-btn"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-      </button>
-    </div>
+    </>
   );
 };
 
-const Header = ({ isCollapsed }) => {
+const Header = ({ setMobileOpen }) => {
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const pathParts = location.pathname.split('/').filter(p => p);
@@ -117,18 +130,25 @@ const Header = ({ isCollapsed }) => {
 
   return (
     <div className="header">
-      {/* CHECK 2: Breadcrumb Left */}
-      <div className="flex items-center gap-2" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
-        <span style={{ opacity: 0.7 }}>THE 16 EYES Farm House</span>
-        <ChevronRight size={14} />
-        <span style={{ fontWeight: 500, color: 'white' }}>{pageTitle}</span>
+      <div className="flex items-center gap-3">
+        <button 
+          className="sidebar-toggle-mobile lg:hidden"
+          onClick={() => setMobileOpen(true)}
+        >
+          <Menu size={24} />
+        </button>
+        <div className="hidden sm:flex items-center gap-2" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+          <span style={{ opacity: 0.7 }}>THE 16 EYES Farm House</span>
+          <ChevronRight size={14} />
+          <span style={{ fontWeight: 500, color: 'white' }}>{pageTitle}</span>
+        </div>
+        <span className="sm:hidden font-semibold text-white">{pageTitle}</span>
       </div>
 
-      {/* CHECK 2: User Profile Right */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3" style={{ cursor: 'pointer' }}>
-          <div className="flex flex-col items-end">
-            <span style={{ fontSize: '13px', fontWeight: 500, color: 'white' }}>the16eyesfarmhouse</span>
+          <div className="hidden sm:flex flex-col items-end">
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'white' }}>{user.username || 'admin'}</span>
             <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>SuperAdmin</span>
           </div>
           <div className="user-avatar" style={{ 
@@ -137,7 +157,7 @@ const Header = ({ isCollapsed }) => {
           }}>
             {user.username?.charAt(0).toUpperCase() || 'A'}
           </div>
-          <ChevronDown size={14} color="rgba(255,255,255,0.7)" />
+          <ChevronDown size={14} color="rgba(255,255,255,0.7)" className="hidden sm:block" />
         </div>
       </div>
     </div>
@@ -146,13 +166,19 @@ const Header = ({ isCollapsed }) => {
 
 const PrivateRoute = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const token = localStorage.getItem('farmhouse_token');
   
   return token ? (
     <div className="app-layout">
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      <Sidebar 
+        isCollapsed={isCollapsed} 
+        setIsCollapsed={setIsCollapsed} 
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
+      />
       <div className={`main-wrapper ${isCollapsed ? 'expanded' : ''}`}>
-        <Header isCollapsed={isCollapsed} />
+        <Header setMobileOpen={setMobileOpen} />
         <div className="content-area">
           {children}
         </div>

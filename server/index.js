@@ -26,6 +26,7 @@ const getSlotDateTime = (dateStr, timeStr, offsetDays = 0) => {
 };
 
 const app = express();
+const router = express.Router();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -43,8 +44,11 @@ async function logActivity(userId, action, module, detail, ip) {
 app.use(cors());
 app.use(express.json());
 
+// Mount router on /api
+app.use('/api', router);
+
 // Root Health Check
-app.get('/', (req, res) => {
+router.get('/health', (req, res) => {
   res.json({ status: 'success', message: '16 Eyes Farm House API is running' });
 });
 
@@ -63,7 +67,7 @@ const authenticateToken = (req, res, next) => {
 };
 
 // --- AUTH ROUTES ---
-app.post('/api/auth/login', async (req, res) => {
+router.post('/auth/login', async (req, res) => {
   const { username, password } = req.body;
   try {
     const result = await db.execute({
@@ -85,7 +89,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // --- BOOKING ROUTES ---
-app.get('/api/bookings/summary', authenticateToken, async (req, res) => {
+router.get('/bookings/summary', authenticateToken, async (req, res) => {
   try {
     const data = await Promise.all([
       db.execute('SELECT COUNT(*) as count FROM bookings'),
@@ -109,7 +113,7 @@ app.get('/api/bookings/summary', authenticateToken, async (req, res) => {
   }
 });
 
-app.patch('/api/bookings/:id/confirm', authenticateToken, async (req, res) => {
+router.patch('/bookings/:id/confirm', authenticateToken, async (req, res) => {
   try {
     await db.execute({
       sql: "UPDATE bookings SET status = 'confirmed' WHERE id = ?",
@@ -121,7 +125,7 @@ app.patch('/api/bookings/:id/confirm', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/bookings', authenticateToken, async (req, res) => {
+router.get('/bookings', authenticateToken, async (req, res) => {
   try {
     const result = await db.execute('SELECT * FROM bookings ORDER BY check_in DESC');
     res.json(result.rows);
@@ -130,7 +134,7 @@ app.get('/api/bookings', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/bookings', authenticateToken, async (req, res) => {
+router.post('/bookings', authenticateToken, async (req, res) => {
   const { customer_name, customer_phone, check_in, check_out, total_amount, advance_paid, notes } = req.body;
   try {
     const result = await db.execute({
@@ -145,7 +149,7 @@ app.post('/api/bookings', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/bookings/:id', authenticateToken, async (req, res) => {
+router.put('/bookings/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { customer_name, customer_phone, check_in, check_out, total_amount, advance_paid, status, notes } = req.body;
   try {
@@ -159,7 +163,7 @@ app.put('/api/bookings/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.delete('/api/bookings/:id', authenticateToken, async (req, res) => {
+router.delete('/bookings/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
     await db.execute({ sql: 'DELETE FROM bookings WHERE id = ?', args: [id] });
@@ -171,7 +175,7 @@ app.delete('/api/bookings/:id', authenticateToken, async (req, res) => {
 });
 
 // --- INCOME ROUTES ---
-app.get('/api/income/summary', authenticateToken, async (req, res) => {
+router.get('/income/summary', authenticateToken, async (req, res) => {
   try {
     const data = await Promise.all([
       db.execute('SELECT SUM(amount) as total FROM income'),
@@ -186,7 +190,7 @@ app.get('/api/income/summary', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/settings/income-types', authenticateToken, async (req, res) => {
+router.get('/settings/income-types', authenticateToken, async (req, res) => {
   try {
     const result = await db.execute('SELECT name FROM income_types');
     res.json(result.rows.map(r => r.name));
@@ -195,7 +199,7 @@ app.get('/api/settings/income-types', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/income', authenticateToken, async (req, res) => {
+router.get('/income', authenticateToken, async (req, res) => {
   const { type, from, to, search } = req.query;
   let sql = 'SELECT * FROM income WHERE 1=1';
   const args = [];
@@ -227,7 +231,7 @@ app.get('/api/income', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/income', authenticateToken, async (req, res) => {
+router.post('/income', authenticateToken, async (req, res) => {
   const { amount, description, date, type, payment_mode, reference } = req.body;
   try {
     await db.execute({
@@ -241,7 +245,7 @@ app.post('/api/income', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/income/:id', authenticateToken, async (req, res) => {
+router.put('/income/:id', authenticateToken, async (req, res) => {
   const { amount, description, date, type, payment_mode, reference } = req.body;
   try {
     await db.execute({
@@ -254,7 +258,7 @@ app.put('/api/income/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.delete('/api/income/:id', authenticateToken, async (req, res) => {
+router.delete('/income/:id', authenticateToken, async (req, res) => {
   try {
     await db.execute({ sql: 'DELETE FROM income WHERE id = ?', args: [req.params.id] });
     await logActivity(req.user.id, 'Delete', 'Income', `Deleted income record ID: ${req.params.id}`, req.ip);
@@ -263,7 +267,7 @@ app.delete('/api/income/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-app.get('/api/expenses/summary', authenticateToken, async (req, res) => {
+router.get('/expenses/summary', authenticateToken, async (req, res) => {
   try {
     const data = await Promise.all([
       db.execute('SELECT SUM(amount) as total FROM expenses'),
@@ -278,7 +282,7 @@ app.get('/api/expenses/summary', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/settings/expense-types', authenticateToken, async (req, res) => {
+router.get('/settings/expense-types', authenticateToken, async (req, res) => {
   try {
     const result = await db.execute('SELECT name FROM expense_types');
     res.json(result.rows.map(r => r.name));
@@ -287,7 +291,7 @@ app.get('/api/settings/expense-types', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/expenses', authenticateToken, async (req, res) => {
+router.get('/expenses', authenticateToken, async (req, res) => {
   const { type, from, to, search } = req.query;
   let sql = 'SELECT * FROM expenses WHERE 1=1';
   const args = [];
@@ -319,7 +323,7 @@ app.get('/api/expenses', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/expenses', authenticateToken, async (req, res) => {
+router.post('/expenses', authenticateToken, async (req, res) => {
   const { amount, description, date, type, payment_mode, vendor, reference } = req.body;
   try {
     await db.execute({
@@ -333,7 +337,7 @@ app.post('/api/expenses', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/expenses/:id', authenticateToken, async (req, res) => {
+router.put('/expenses/:id', authenticateToken, async (req, res) => {
   const { amount, description, date, type, payment_mode, vendor, reference } = req.body;
   try {
     await db.execute({
@@ -345,7 +349,7 @@ app.put('/api/expenses/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-app.delete('/api/expenses/:id', authenticateToken, async (req, res) => {
+router.delete('/expenses/:id', authenticateToken, async (req, res) => {
   try {
     await db.execute({ sql: 'DELETE FROM expenses WHERE id = ?', args: [req.params.id] });
     await logActivity(req.user.id, 'Delete', 'Expenses', `Deleted expense record ID: ${req.params.id}`, req.ip);
@@ -356,7 +360,7 @@ app.delete('/api/expenses/:id', authenticateToken, async (req, res) => {
 });
 
 // --- AVAILABILITY ROUTES ---
-app.get('/api/bookings/availability', authenticateToken, async (req, res) => {
+router.get('/bookings/availability', authenticateToken, async (req, res) => {
   const { date } = req.query;
   if (!date) return res.status(400).json({ error: 'Date is required' });
 
@@ -406,7 +410,7 @@ app.get('/api/bookings/availability', authenticateToken, async (req, res) => {
 });
 
 // --- DASHBOARD STATS ---
-app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
+router.get('/dashboard/stats', authenticateToken, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
     
@@ -443,7 +447,7 @@ app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
 });
 
 // --- PDF GENERATION ---
-app.get('/api/bookings/:id/pdf', authenticateToken, async (req, res) => {
+router.get('/bookings/:id/pdf', authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await db.execute({ sql: 'SELECT * FROM bookings WHERE id = ?', args: [id] });
@@ -484,7 +488,7 @@ app.get('/api/bookings/:id/pdf', authenticateToken, async (req, res) => {
 });
 
 // --- SETTINGS ROUTES ---
-app.get('/api/settings/time-slots', authenticateToken, async (req, res) => {
+router.get('/settings/time-slots', authenticateToken, async (req, res) => {
   try {
     const result = await db.execute('SELECT * FROM time_slots');
     res.json(result.rows);
@@ -493,7 +497,7 @@ app.get('/api/settings/time-slots', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/settings/time-slots', authenticateToken, async (req, res) => {
+router.post('/settings/time-slots', authenticateToken, async (req, res) => {
   const { name, startTime, endTime, crossesMidnight, color } = req.body;
   try {
     await db.execute({
@@ -507,7 +511,7 @@ app.post('/api/settings/time-slots', authenticateToken, async (req, res) => {
   }
 });
 
-app.delete('/api/settings/time-slots/:id', authenticateToken, async (req, res) => {
+router.delete('/settings/time-slots/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
     const bookingCheck = await db.execute({
@@ -525,7 +529,7 @@ app.delete('/api/settings/time-slots/:id', authenticateToken, async (req, res) =
   }
 });
 
-app.get('/api/settings/identity', authenticateToken, async (req, res) => {
+router.get('/settings/identity', authenticateToken, async (req, res) => {
   try {
     const result = await db.execute('SELECT * FROM settings WHERE key IN ("house_name", "phone", "email", "address", "logo")');
     const settings = {};
@@ -536,7 +540,7 @@ app.get('/api/settings/identity', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/settings/identity', authenticateToken, async (req, res) => {
+router.put('/settings/identity', authenticateToken, async (req, res) => {
   const settings = req.body;
   try {
     for (const [key, value] of Object.entries(settings)) {
@@ -552,7 +556,7 @@ app.put('/api/settings/identity', authenticateToken, async (req, res) => {
   }
 });
 
-app.delete('/api/settings/logo', authenticateToken, async (req, res) => {
+router.delete('/settings/logo', authenticateToken, async (req, res) => {
   try {
     await db.execute({ sql: 'UPDATE settings SET value = "" WHERE key = "logo"', args: [] });
     await logActivity(req.user.id, 'Delete', 'Settings', 'Reset system logo', req.ip);
@@ -563,7 +567,7 @@ app.delete('/api/settings/logo', authenticateToken, async (req, res) => {
 });
 
 // --- REPORT ROUTES ---
-app.post('/api/reports/generate', authenticateToken, async (req, res) => {
+router.post('/reports/generate', authenticateToken, async (req, res) => {
   const { types, period, from, to, status, paymentMode } = req.body;
   
   let dateFrom = from;
@@ -630,7 +634,7 @@ app.post('/api/reports/generate', authenticateToken, async (req, res) => {
 });
 
 // --- USERS ROUTES ---
-app.get('/api/users', authenticateToken, async (req, res) => {
+router.get('/users', authenticateToken, async (req, res) => {
   try {
     const result = await db.execute('SELECT id, username, name, role, photo, created_at FROM users ORDER BY created_at DESC');
     res.json(result.rows);
@@ -639,7 +643,7 @@ app.get('/api/users', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/users', authenticateToken, async (req, res) => {
+router.post('/users', authenticateToken, async (req, res) => {
   const { name, username, password, role } = req.body;
   try {
     const result = await db.execute({
@@ -653,7 +657,7 @@ app.post('/api/users', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/users/:id', authenticateToken, async (req, res) => {
+router.put('/users/:id', authenticateToken, async (req, res) => {
   const { name, username, role, password } = req.body;
   try {
     let sql = 'UPDATE users SET name = ?, username = ?, role = ?';
@@ -675,7 +679,7 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.delete('/api/users/:id', authenticateToken, async (req, res) => {
+router.delete('/users/:id', authenticateToken, async (req, res) => {
   try {
     if (req.params.id === req.user.id.toString()) {
       return res.status(400).json({ error: 'You cannot delete your own account' });
@@ -689,7 +693,7 @@ app.delete('/api/users/:id', authenticateToken, async (req, res) => {
 });
 
 // --- PROFILE ROUTES ---
-app.get('/api/profile', authenticateToken, async (req, res) => {
+router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const result = await db.execute({
       sql: 'SELECT id, username, name, role, photo, created_at FROM users WHERE id = ?',
@@ -701,7 +705,7 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/profile', authenticateToken, async (req, res) => {
+router.put('/profile', authenticateToken, async (req, res) => {
   const { name, username } = req.body;
   try {
     await db.execute({
@@ -715,7 +719,7 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/profile/password', authenticateToken, async (req, res) => {
+router.put('/profile/password', authenticateToken, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   try {
     const result = await db.execute({
@@ -739,7 +743,7 @@ app.put('/api/profile/password', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/profile/photo', authenticateToken, async (req, res) => {
+router.post('/profile/photo', authenticateToken, async (req, res) => {
   const { photo } = req.body; // Expecting base64 or URL
   try {
     await db.execute({
@@ -753,7 +757,7 @@ app.post('/api/profile/photo', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/profile/sessions', authenticateToken, async (req, res) => {
+router.get('/profile/sessions', authenticateToken, async (req, res) => {
   try {
     const result = await db.execute({
       sql: "SELECT timestamp, ip_address, detail FROM activity_logs WHERE user_id = ? AND action = 'Login' ORDER BY timestamp DESC LIMIT 3",
@@ -764,7 +768,7 @@ app.get('/api/profile/sessions', authenticateToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-app.get('/api/activity-logs', authenticateToken, async (req, res) => {
+router.get('/activity-logs', authenticateToken, async (req, res) => {
   const { module, action, from, to, search, page = 1 } = req.query;
   const limit = 50;
   const offset = (page - 1) * limit;
@@ -815,6 +819,8 @@ app.get('/api/activity-logs', authenticateToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+app.use('/api', router);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -753,3 +753,74 @@ input:focus { outline: none; border-color: var(--amber); background-color: white
   justify-content: center;
   font-weight: 600;
 }
+
+/* --- RESPONSIVENESS (All Devices) --- */
+@media (max-width: 1024px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .grid-cols-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+  }
+  
+  .sidebar {
+    left: -240px;
+    transition: left 0.3s ease;
+  }
+  
+  .sidebar.mobile-open {
+    left: 0;
+    width: 240px;
+  }
+  
+  .main-wrapper {
+    margin-left: 0 !important;
+  }
+  
+  .header {
+    padding: 0 16px;
+  }
+  
+  .content-area {
+    padding: 16px;
+  }
+  
+  .grid-cols-2, .grid-cols-3, .grid-cols-12 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .lg\:grid-cols-2, .lg\:grid-cols-12 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .stat-card {
+    padding: 16px;
+  }
+  
+  .modal-card {
+    width: 95%;
+    padding: 16px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .sidebar-toggle-mobile {
+    display: block !important;
+  }
+}
+
+.sidebar-toggle-mobile {
+  display: none;
+  background: none;
+  color: white;
+  padding: 8px;
+}

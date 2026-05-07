@@ -31,9 +31,9 @@ const Settings = () => {
   const fetchData = async () => {
     try {
       const [idRes, slotsRes, typesRes] = await Promise.all([
-        api.get('/api/settings/identity'),
-        api.get('/api/settings/time-slots'),
-        api.get('/api/settings/income-types')
+        api.get('/settings/identity'),
+        api.get('/settings/time-slots'),
+        api.get('/settings/income-types')
       ]);
       setIdentity(idRes.data);
       setSlots(slotsRes.data);
@@ -52,7 +52,7 @@ const Settings = () => {
   const handleIdentitySave = async (e) => {
     e.preventDefault();
     try {
-      await api.put('/api/settings/identity', identity);
+      await api.put('/settings/identity', identity);
       toast.success('Identity updated');
     } catch (error) {
       toast.error('Failed to save identity');
@@ -71,7 +71,7 @@ const Settings = () => {
     const crossesMidnight = (eH * 60 + eM) < (sH * 60 + sM);
 
     try {
-      await api.post('/api/settings/time-slots', { ...newSlot, crossesMidnight });
+      await api.post('/settings/time-slots', { ...newSlot, crossesMidnight });
       toast.success('Time slot added');
       setNewSlot({ name: '', startTime: '', endTime: '', color: '#1C2D5E' });
       fetchData();
@@ -101,7 +101,7 @@ const Settings = () => {
     e.preventDefault();
     if (!newIncomeType) return;
     try {
-      await api.post('/api/settings/income-types', { name: newIncomeType });
+      await api.post('/settings/income-types', { name: newIncomeType });
       toast.success('Income type added');
       setNewIncomeType('');
       fetchData();
@@ -127,7 +127,7 @@ const Settings = () => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       try {
-        await api.put('/api/settings/identity', { logo: reader.result });
+        await api.put('/settings/identity', { logo: reader.result });
         toast.success('Logo updated');
         fetchData();
       } catch (error) {
@@ -155,7 +155,7 @@ const Settings = () => {
               <label>FARMHOUSE NAME</label>
               <input type="text" value={identity.house_name} onChange={(e) => setIdentity({...identity, house_name: e.target.value})} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="form-group">
                 <label>PHONE</label>
                 <input type="tel" value={identity.phone} onChange={(e) => setIdentity({...identity, phone: e.target.value})} />
@@ -209,7 +209,7 @@ const Settings = () => {
                 <label>SLOT NAME *</label>
                 <input type="text" placeholder="e.g. Morning Slot, Evening Slot..." value={newSlot.name} onChange={(e) => setNewSlot({...newSlot, name: e.target.value})} />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="form-group">
                   <label>START TIME *</label>
                   <input type="time" value={newSlot.startTime} onChange={(e) => setNewSlot({...newSlot, startTime: e.target.value})} />
@@ -284,7 +284,7 @@ const Settings = () => {
                 <Plus size={16} /> Upload New Logo
               </button>
               <input type="file" id="logo-upload" className="hidden" accept="image/*" onChange={handleLogoUpload} />
-              <button className="btn-danger flex items-center gap-2" onClick={async () => { await api.delete('/api/settings/logo'); fetchData(); toast.success('Logo reset'); }}>
+              <button className="btn-danger flex items-center gap-2" onClick={async () => { await api.delete('/settings/logo'); fetchData(); toast.success('Logo reset'); }}>
                 <RotateCcw size={16} /> Reset Default
               </button>
             </div>

@@ -61,7 +61,7 @@ const Reports = () => {
     }
     setLoading(true);
     try {
-      const res = await api.post('/api/reports/generate', {
+      const res = await api.post('/reports/generate', {
         types: selectedTypes,
         period,
         from: dateFrom,

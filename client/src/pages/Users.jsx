@@ -27,7 +27,7 @@ const UsersPage = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/users');
+      const res = await api.get('/users');
       setUsers(res.data);
     } catch (error) {
       toast.error('Failed to load users');
@@ -47,7 +47,7 @@ const UsersPage = () => {
         await api.put(`/api/users/${editingUser.id}`, formData);
         toast.success('User updated successfully');
       } else {
-        await api.post('/api/users', formData);
+        await api.post('/users', formData);
         toast.success('New user created');
       }
       setShowModal(false);

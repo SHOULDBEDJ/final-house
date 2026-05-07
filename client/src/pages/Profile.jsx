@@ -33,8 +33,8 @@ const Profile = () => {
   const fetchData = async () => {
     try {
       const [profileRes, sessionsRes] = await Promise.all([
-        api.get('/api/profile'),
-        api.get('/api/profile/sessions')
+        api.get('/profile'),
+        api.get('/profile/sessions')
       ]);
       setUser(profileRes.data);
       setProfileForm({ name: profileRes.data.name, username: profileRes.data.username });
@@ -53,7 +53,7 @@ const Profile = () => {
   const handleProfileSave = async (e) => {
     e.preventDefault();
     try {
-      await api.put('/api/profile', profileForm);
+      await api.put('/profile', profileForm);
       toast.success('Profile updated');
       fetchData();
     } catch (error) {
@@ -74,7 +74,7 @@ const Profile = () => {
     }
 
     try {
-      await api.put('/api/profile/password', {
+      await api.put('/profile/password', {
         currentPassword: passForm.currentPassword,
         newPassword: passForm.newPassword
       });
@@ -97,7 +97,7 @@ const Profile = () => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       try {
-        await api.post('/api/profile/photo', { photo: reader.result });
+        await api.post('/profile/photo', { photo: reader.result });
         toast.success('Photo updated');
         fetchData();
       } catch (error) {
