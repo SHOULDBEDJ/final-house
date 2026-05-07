@@ -13,7 +13,9 @@ import {
   FileText,
   Activity,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  ChevronLeft,
+  Menu
 } from 'lucide-react';
 
 // Pages
@@ -27,7 +29,7 @@ import SettingsPage from './pages/Settings';
 import Profile from './pages/Profile';
 import UsersPage from './pages/Users';
 
-const Sidebar = () => {
+const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -37,8 +39,6 @@ const Sidebar = () => {
     window.location.href = '/login';
   };
 
-  // SIDEBAR NAVIGATION ORDER:
-  // Dashboard, Bookings, Income, Expenses, Reports, Users, Activity Log, Profile, Settings
   const navItems = [
     { path: '/', icon: <LayoutDashboard />, label: 'Dashboard' },
     { path: '/bookings', icon: <CalendarDays />, label: 'Bookings' },
@@ -52,14 +52,14 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="sidebar">
-      {/* Logo Section */}
+    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+      {/* CHECK 1: Top Logo Section */}
       <div className="sidebar-logo">
         <div style={{ 
-          width: '32px', height: '32px', borderRadius: '4px', background: 'var(--amber)', 
+          minWidth: '32px', height: '32px', borderRadius: '4px', background: 'var(--amber)', 
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' 
         }}>16</div>
-        <span style={{ fontWeight: 600, fontSize: '15px', whiteSpace: 'nowrap' }}>16 EYES Farm House</span>
+        {!isCollapsed && <span style={{ fontWeight: 600, fontSize: '15px', whiteSpace: 'nowrap' }}>16 EYES Farm House</span>}
       </div>
 
       {/* Nav Menu */}
@@ -69,31 +69,46 @@ const Sidebar = () => {
             key={item.path} 
             to={item.path} 
             className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+            title={isCollapsed ? item.label : ''}
           >
             {React.cloneElement(item.icon, { size: 18 })}
-            <span>{item.label}</span>
+            {!isCollapsed && <span>{item.label}</span>}
           </Link>
         ))}
       </div>
 
-      {/* Bottom User Info */}
+      {/* CHECK 1: Bottom Toggle & User Info */}
       <div className="sidebar-footer">
-        <div className="user-avatar">
-          {user.username?.charAt(0).toUpperCase() || 'A'}
+        <div className="flex items-center gap-3 w-full">
+          <div className="user-avatar" style={{ minWidth: '32px' }}>
+            {user.username?.charAt(0).toUpperCase() || 'A'}
+          </div>
+          {!isCollapsed && (
+            <div className="user-info">
+              <span className="username">{user.name || user.username || 'Admin'}</span>
+              <span className="role">SuperAdmin</span>
+            </div>
+          )}
+          {!isCollapsed && (
+            <button onClick={handleLogout} style={{ marginLeft: 'auto', background: 'none', color: 'var(--nav-text)' }}>
+              <LogOut size={16} />
+            </button>
+          )}
         </div>
-        <div className="user-info">
-          <span className="username">{user.name || user.username || 'Admin'}</span>
-          <span className="role">{user.role || 'SuperAdmin'}</span>
-        </div>
-        <button onClick={handleLogout} style={{ marginLeft: 'auto', background: 'none', color: 'var(--nav-text)' }}>
-          <LogOut size={16} />
-        </button>
       </div>
+      
+      {/* Collapse Toggle Arrow */}
+      <button 
+        className="collapse-toggle-btn"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      </button>
     </div>
   );
 };
 
-const Header = () => {
+const Header = ({ isCollapsed }) => {
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const pathParts = location.pathname.split('/').filter(p => p);
@@ -101,27 +116,27 @@ const Header = () => {
 
   return (
     <div className="header">
-      {/* Breadcrumb Left */}
-      <div className="flex items-center gap-2" style={{ fontSize: '13px', opacity: 0.8 }}>
-        <span>Home</span>
+      {/* CHECK 2: Breadcrumb Left */}
+      <div className="flex items-center gap-2" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+        <span style={{ opacity: 0.7 }}>THE 16 EYES Farm House</span>
         <ChevronRight size={14} />
-        <span style={{ color: 'var(--amber)', fontWeight: 500 }}>{pageTitle}</span>
+        <span style={{ fontWeight: 500, color: 'white' }}>{pageTitle}</span>
       </div>
 
-      {/* User Profile Right */}
+      {/* CHECK 2: User Profile Right */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
+        <div className="flex items-center gap-3" style={{ cursor: 'pointer' }}>
+          <div className="flex flex-col items-end">
+            <span style={{ fontSize: '13px', fontWeight: 500, color: 'white' }}>the16eyesfarmhouse</span>
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>SuperAdmin</span>
+          </div>
           <div className="user-avatar" style={{ 
-            width: '30px', height: '30px', borderRadius: '50%', background: 'var(--amber)', 
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 600 
+            width: '36px', height: '36px', borderRadius: '50%', background: 'var(--amber)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 600, color: 'white' 
           }}>
             {user.username?.charAt(0).toUpperCase() || 'A'}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '13px', fontWeight: 500 }}>{user.name || 'Admin'}</span>
-            <span style={{ fontSize: '10px', opacity: 0.7 }}>SuperAdmin</span>
-          </div>
-          <ChevronDown size={14} />
+          <ChevronDown size={14} color="rgba(255,255,255,0.7)" />
         </div>
       </div>
     </div>
@@ -129,12 +144,14 @@ const Header = () => {
 };
 
 const PrivateRoute = ({ children }) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const token = localStorage.getItem('farmhouse_token');
+  
   return token ? (
     <div className="app-layout">
-      <Sidebar />
-      <div className="main-wrapper">
-        <Header />
+      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      <div className={`main-wrapper ${isCollapsed ? 'expanded' : ''}`}>
+        <Header isCollapsed={isCollapsed} />
         <div className="content-area">
           {children}
         </div>

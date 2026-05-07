@@ -16,11 +16,13 @@ import {
   List,
   User,
   Zap,
-  Layout
+  Layout,
+  CheckCircle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
-const StatCard = ({ title, value, icon, accent, color }) => (
+const StatCard = ({ title, value, icon, accent }) => (
   <div className="card stat-card" style={{ borderLeft: `4px solid ${accent}` }}>
     <div className="stat-icon-circle" style={{ backgroundColor: `${accent}15`, color: accent }}>
       {icon}
@@ -44,6 +46,7 @@ const Dashboard = () => {
   });
   const [recentBookings, setRecentBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchDashboardData = async () => {
     try {
@@ -85,6 +88,11 @@ const Dashboard = () => {
     fetchMonthAvailability();
   }, [currentDate]);
 
+  const handleCellClick = (dateStr) => {
+    // CHECK 6: Click to book - Navigate to bookings with pre-filled date
+    navigate(`/bookings?date=${dateStr}&action=new`);
+  };
+
   const renderCalendar = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -109,7 +117,12 @@ const Dashboard = () => {
       const allAvailable = slots.length > 0 && slots.every(s => s.available);
 
       days.push(
-        <div key={day} className={`calendar-day ${isToday ? 'today' : ''} ${allBooked ? 'fully-booked' : ''}`}>
+        <div 
+          key={day} 
+          className={`calendar-day ${isToday ? 'today' : ''} ${allBooked ? 'fully-booked' : ''}`}
+          onClick={() => handleCellClick(dateStr)}
+          style={{ cursor: 'pointer' }}
+        >
           <span className="day-number">{day}</span>
           <div className="slot-pills">
             {allAvailable ? (
@@ -121,8 +134,8 @@ const Dashboard = () => {
                 <div 
                   key={slot.slotId} 
                   className={`slot-pill ${slot.available ? 'available' : 'booked'}`}
-                  style={{ backgroundColor: slot.available ? 'var(--green)' : '#eee' }}
-                  title={slot.slotName}
+                  style={{ backgroundColor: slot.available ? slot.color : '#eee' }}
+                  title={`${slot.slotName}: ${slot.available ? 'Available' : 'Booked'}`}
                 ></div>
               ))
             )}
@@ -178,27 +191,27 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid mb-8" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
+      {/* Stats Cards (Check 7) */}
+      <div className="grid mb-6" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
         <StatCard title="Total Bookings" value={stats.totalBookings} icon={<Layout size={20} />} accent="var(--navy)" />
-        <StatCard title="Today's Bookings" value={stats.todayBookings || 0} icon={<CalendarDays size={20} />} accent="var(--navy)" />
-        <StatCard title="Monthly Bookings" value={stats.monthlyBookings || 0} icon={< trendingUp size={20} />} accent="var(--navy)" />
-        <StatCard title="Weekly Bookings" value={stats.weeklyBookings || 0} icon={<Layout size={20} />} accent="var(--navy)" />
+        <StatCard title="Today's Bookings" value={stats.todayBookings} icon={<CalendarDays size={20} />} accent="var(--navy)" />
+        <StatCard title="Monthly Bookings" value={stats.monthlyBookings} icon={<TrendingUp size={20} />} accent="var(--navy)" />
+        <StatCard title="This Week's Bookings" value={stats.weeklyBookings} icon={<CheckCircle size={20} />} accent="var(--navy)" />
       </div>
       <div className="grid mb-8" style={{ gridTemplateColumns: '1fr', gap: '24px' }}>
-        <StatCard title="Upcoming Bookings" value={stats.upcomingBookings || 0} icon={<Clock size={20} />} accent="var(--navy)" />
+        <StatCard title="Upcoming Bookings" value={stats.upcomingBookings} icon={<Clock size={20} />} accent="var(--navy)" />
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions (Check 8) */}
       <div className="flex gap-4 mb-8">
-        <button className="btn-primary"><Plus size={16} /> Add Booking</button>
-        <button className="btn-primary" style={{ background: '#198754' }}><Plus size={16} /> Add Income</button>
-        <button className="btn-danger"><Plus size={16} /> Add Expense</button>
-        <button className="btn-inactive-toggle" style={{ padding: '10px 20px' }}>Full Calendar</button>
-        <button className="btn-inactive-toggle" style={{ padding: '10px 20px' }}>Report</button>
+        <button className="btn-primary" onClick={() => navigate('/bookings?action=new')}><Plus size={16} /> Add Booking</button>
+        <button className="btn-primary" style={{ background: '#198754' }} onClick={() => navigate('/income?action=new')}><Plus size={16} /> Add Income</button>
+        <button className="btn-danger" onClick={() => navigate('/expenses?action=new')}><Plus size={16} /> Add Expense</button>
+        <button className="btn-inactive-toggle" style={{ padding: '10px 20px' }} onClick={() => navigate('/bookings')}>Full Calendar</button>
+        <button className="btn-inactive-toggle" style={{ padding: '10px 20px' }} onClick={() => navigate('/reports')}>Report</button>
       </div>
 
-      {/* Recent Bookings Table */}
+      {/* Recent Bookings Table (Check 9) */}
       <div className="card">
         <div className="flex justify-between items-center mb-6">
           <h2 style={{ fontSize: '16px', fontWeight: 600 }}>Recent Bookings</h2>
@@ -226,7 +239,7 @@ const Dashboard = () => {
             <tbody>
               {recentBookings.map((booking) => (
                 <tr key={booking.id}>
-                  <td><a href="#" className="order-link">16EYE{String(booking.id).padStart(2, '0')}</a></td>
+                  <td><a href={`/bookings/${booking.id}`} className="order-link">16EYE{String(booking.id).padStart(2, '0')}</a></td>
                   <td>
                     <div className="flex items-center gap-3">
                       <div className="user-avatar" style={{ width: '34px', height: '34px', fontSize: '13px' }}>
@@ -237,7 +250,7 @@ const Dashboard = () => {
                   </td>
                   <td>
                     <div>{new Date(booking.check_in).toLocaleDateString('en-GB')}</div>
-                    <div style={{ fontSize: '12px', color: '#888' }}>Morng Slot</div>
+                    <div style={{ fontSize: '12px', color: '#888' }}>{booking.slot_name || 'Full Day'}</div>
                   </td>
                   <td style={{ color: 'var(--green)', fontWeight: 600 }}>₹{booking.total_amount.toLocaleString()}</td>
                   <td>

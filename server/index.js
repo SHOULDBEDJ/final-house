@@ -210,16 +210,34 @@ app.get('/api/bookings/availability', authenticateToken, async (req, res) => {
 // --- DASHBOARD STATS ---
 app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
   try {
-    const bookingsCount = await db.execute('SELECT COUNT(*) as count FROM bookings');
-    const incomeSum = await db.execute('SELECT SUM(amount) as total FROM income');
-    const expenseSum = await db.execute('SELECT SUM(amount) as total FROM expenses');
-    const pendingBookings = await db.execute("SELECT COUNT(*) as count FROM bookings WHERE status = 'pending'");
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get week start (Sunday)
+    const curr = new Date();
+    const first = curr.getDate() - curr.getDay();
+    const weekStart = new Date(curr.setDate(first)).toISOString().split('T')[0];
+    
+    // Get month start
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+
+    const stats = await Promise.all([
+      db.execute('SELECT COUNT(*) as count FROM bookings'),
+      db.execute({ sql: 'SELECT COUNT(*) as count FROM bookings WHERE date = ?', args: [today] }),
+      db.execute({ sql: 'SELECT COUNT(*) as count FROM bookings WHERE date >= ?', args: [monthStart] }),
+      db.execute({ sql: 'SELECT COUNT(*) as count FROM bookings WHERE date >= ?', args: [weekStart] }),
+      db.execute({ sql: "SELECT COUNT(*) as count FROM bookings WHERE status = 'confirmed' AND date > ?", args: [today] }),
+      db.execute('SELECT SUM(amount) as total FROM income'),
+      db.execute('SELECT SUM(amount) as total FROM expenses')
+    ]);
 
     res.json({
-      totalBookings: bookingsCount.rows[0].count,
-      totalIncome: incomeSum.rows[0].total || 0,
-      totalExpenses: expenseSum.rows[0].total || 0,
-      pendingBookings: pendingBookings.rows[0].count,
+      totalBookings: stats[0].rows[0].count,
+      todayBookings: stats[1].rows[0].count,
+      monthlyBookings: stats[2].rows[0].count,
+      weeklyBookings: stats[3].rows[0].count,
+      upcomingBookings: stats[4].rows[0].count,
+      totalIncome: stats[5].rows[0].total || 0,
+      totalExpenses: stats[6].rows[0].total || 0,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

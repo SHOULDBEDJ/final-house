@@ -130,7 +130,34 @@ h1 { font-size: 26px; font-weight: 600; color: var(--amber); margin-bottom: 4px;
 .nav-item.active {
   background-color: rgba(255,255,255,0.08);
   color: var(--white);
-  border-left: 3px solid #198754; /* 3px solid green left-border */
+  border-left: 3px solid #2E7D32; /* CHECK 1: 3px solid green left-border */
+}
+
+/* Sidebar Toggle */
+.collapse-toggle-btn {
+  position: absolute;
+  bottom: 80px;
+  left: 20px;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.collapse-toggle-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.sidebar.collapsed .collapse-toggle-btn {
+  left: 50%;
+  transform: translateX(-50%);
 }
 .nav-item.active svg { color: var(--white); }
 
