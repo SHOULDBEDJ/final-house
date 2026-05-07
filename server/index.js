@@ -468,6 +468,73 @@ app.post('/api/settings', authenticateToken, async (req, res) => {
   }
 });
 
+// --- REPORT ROUTES ---
+app.post('/api/reports/generate', authenticateToken, async (req, res) => {
+  const { types, period, from, to, status, paymentMode } = req.body;
+  
+  let dateFrom = from;
+  let dateTo = to;
+
+  if (period !== 'Custom Range') {
+    const now = new Date();
+    if (period === 'Daily') {
+      dateFrom = now.toISOString().split('T')[0];
+      dateTo = dateFrom;
+    } else if (period === 'Weekly') {
+      const first = now.getDate() - now.getDay();
+      dateFrom = new Date(now.setDate(first)).toISOString().split('T')[0];
+      dateTo = new Date().toISOString().split('T')[0];
+    } else if (period === 'Monthly') {
+      dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      dateTo = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    } else if (period === 'Yearly') {
+      dateFrom = `${now.getFullYear()}-01-01`;
+      dateTo = `${now.getFullYear()}-12-31`;
+    }
+  }
+
+  const reports = {};
+
+  try {
+    if (types.includes('Booking Report') || types.includes('Profit & Loss') || types.includes('Combined Financial') || types.includes('Revenue Summary')) {
+      let sql = 'SELECT * FROM bookings WHERE 1=1';
+      const args = [];
+      if (dateFrom) { sql += ' AND date >= ?'; args.push(dateFrom); }
+      if (dateTo) { sql += ' AND date <= ?'; args.push(dateTo); }
+      if (status && status !== 'All Statuses') { sql += ' AND status = ?'; args.push(status); }
+      
+      const result = await db.execute({ sql, args });
+      reports.bookings = result.rows;
+    }
+
+    if (types.includes('Other Source of Income Report') || types.includes('Profit & Loss') || types.includes('Combined Financial') || types.includes('Revenue Summary')) {
+      let sql = 'SELECT * FROM income WHERE 1=1';
+      const args = [];
+      if (dateFrom) { sql += ' AND date >= ?'; args.push(dateFrom); }
+      if (dateTo) { sql += ' AND date <= ?'; args.push(dateTo); }
+      if (paymentMode && paymentMode !== 'All Modes') { sql += ' AND payment_mode = ?'; args.push(paymentMode); }
+      
+      const result = await db.execute({ sql, args });
+      reports.income = result.rows;
+    }
+
+    if (types.includes('Expense Report') || types.includes('Profit & Loss') || types.includes('Combined Financial')) {
+      let sql = 'SELECT * FROM expenses WHERE 1=1';
+      const args = [];
+      if (dateFrom) { sql += ' AND date >= ?'; args.push(dateFrom); }
+      if (dateTo) { sql += ' AND date <= ?'; args.push(dateTo); }
+      if (paymentMode && paymentMode !== 'All Modes') { sql += ' AND payment_mode = ?'; args.push(paymentMode); }
+      
+      const result = await db.execute({ sql, args });
+      reports.expenses = result.rows;
+    }
+
+    res.json(reports);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
