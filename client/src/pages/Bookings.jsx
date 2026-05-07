@@ -13,13 +13,11 @@ import {
   Check,
   MessageSquare
 } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [showQRModal, setShowQRModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [formData, setFormData] = useState({
     customer_name: '',
@@ -65,32 +63,6 @@ const Bookings = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this booking?')) {
-      try {
-        await api.delete(`/bookings/${id}`);
-        toast.success('Booking deleted');
-        fetchBookings();
-      } catch (error) {
-        toast.error('Delete failed');
-      }
-    }
-  };
-
-  const downloadPDF = async (id) => {
-    try {
-      const response = await api.get(`/bookings/${id}/pdf`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `bill-${id}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-    } catch (error) {
-      toast.error('PDF download failed');
-    }
-  };
-
   const handleEdit = (booking) => {
     setSelectedBooking(booking);
     setFormData({
@@ -114,13 +86,13 @@ const Bookings = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-8">
         <div>
           <h1>Bookings</h1>
-          <p className="subtitle">Manage and track guest reservations</p>
+          <p className="subtitle">Manage and track guest reservations and payments</p>
         </div>
         <button className="btn-primary" onClick={() => { setSelectedBooking(null); setShowModal(true); }}>
-          <Plus size={18} /> ADD NEW BOOKING
+          <Plus size={18} /> NEW BOOKING
         </button>
       </div>
 
@@ -130,7 +102,7 @@ const Bookings = () => {
             <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input 
               type="text" 
-              placeholder="Search by customer name or ID..." 
+              placeholder="Search bookings..." 
               style={{ paddingLeft: '40px', backgroundColor: '#F0EEE9' }} 
             />
           </div>
@@ -139,7 +111,7 @@ const Bookings = () => {
         {loading ? (
           <p className="text-center p-8">Loading bookings...</p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div className="table-container">
             <table>
               <thead>
                 <tr>
@@ -165,7 +137,7 @@ const Bookings = () => {
                           {booking.customer_name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div style={{ fontWeight: 500 }}>{booking.customer_name}</div>
+                          <div style={{ fontWeight: 500, fontSize: '14px' }}>{booking.customer_name}</div>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{booking.customer_phone}</div>
                         </div>
                       </div>
@@ -181,9 +153,9 @@ const Bookings = () => {
                     <td>
                       <div>
                         <div style={{ fontWeight: 600 }}>₹{booking.total_amount.toLocaleString()}</div>
-                        <div className="text-paid" style={{ fontSize: '11px' }}>Paid: ₹{booking.advance_paid.toLocaleString()}</div>
+                        <div className="advance-green" style={{ fontSize: '11px' }}>Paid: ₹{booking.advance_paid.toLocaleString()}</div>
                         {booking.total_amount - booking.advance_paid > 0 && (
-                          <div className="text-pending" style={{ fontSize: '11px' }}>Due: ₹{(booking.total_amount - booking.advance_paid).toLocaleString()}</div>
+                          <div className="balance-red" style={{ fontSize: '11px' }}>Due: ₹{(booking.total_amount - booking.advance_paid).toLocaleString()}</div>
                         )}
                       </div>
                     </td>
@@ -194,11 +166,11 @@ const Bookings = () => {
                     </td>
                     <td>
                       <div className="flex gap-2">
-                        <button className="btn-icon" onClick={() => {}} title="View"><Eye size={14} /></button>
-                        <button className="btn-icon" onClick={() => handleEdit(booking)} title="Edit"><Edit2 size={14} /></button>
-                        <button className="btn-icon" onClick={() => {}} title="Confirm"><Check size={14} /></button>
-                        <button className="btn-icon" onClick={() => {}} title="Message"><MessageSquare size={14} /></button>
-                        <button className="btn-icon" onClick={() => handleDelete(booking.id)} style={{ color: 'var(--danger)' }} title="Delete"><Trash2 size={14} /></button>
+                        <button className="btn-action-circle" title="View"><Eye size={14} /></button>
+                        <button className="btn-action-circle" onClick={() => handleEdit(booking)} title="Edit"><Edit2 size={14} /></button>
+                        <button className="btn-action-circle" title="Confirm"><Check size={14} /></button>
+                        <button className="btn-action-circle" title="Message"><MessageSquare size={14} /></button>
+                        <button className="btn-action-circle" style={{ color: 'var(--danger)' }} title="Delete"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -218,7 +190,7 @@ const Bookings = () => {
               <X className="modal-close" onClick={() => setShowModal(false)} />
             </div>
             <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div className="form-grid">
                 <div className="form-group">
                   <label>Customer Name</label>
                   <input 
@@ -236,8 +208,6 @@ const Bookings = () => {
                     onChange={(e) => setFormData({...formData, customer_phone: e.target.value})}
                   />
                 </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div className="form-group">
                   <label>Check-in Date</label>
                   <input 
@@ -256,10 +226,8 @@ const Bookings = () => {
                     required 
                   />
                 </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div className="form-group">
-                  <label>Total Amount</label>
+                  <label>Total Amount (₹)</label>
                   <input 
                     type="number" 
                     value={formData.total_amount}
@@ -268,26 +236,26 @@ const Bookings = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Advance Paid</label>
+                  <label>Advance Paid (₹)</label>
                   <input 
                     type="number" 
                     value={formData.advance_paid}
                     onChange={(e) => setFormData({...formData, advance_paid: e.target.value})}
                   />
                 </div>
+                <div className="form-group form-full">
+                  <label>Additional Notes</label>
+                  <textarea 
+                    value={formData.notes}
+                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    rows={3}
+                    style={{ height: 'auto', padding: '12px' }}
+                  ></textarea>
+                </div>
               </div>
-              <div className="form-group">
-                <label>Notes</label>
-                <textarea 
-                  value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                  rows={3}
-                  style={{ height: 'auto', padding: '12px' }}
-                ></textarea>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
-                <button type="button" className="btn-danger" onClick={() => setShowModal(false)}>CANCEL</button>
-                <button type="submit" className="btn-primary">SAVE BOOKING</button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+                <button type="button" className="btn-danger" style={{ padding: '10px 24px' }} onClick={() => setShowModal(false)}>CANCEL</button>
+                <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>SAVE BOOKING</button>
               </div>
             </form>
           </div>

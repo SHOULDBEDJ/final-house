@@ -59,7 +59,7 @@ const Sidebar = () => {
           width: '32px', height: '32px', borderRadius: '4px', background: 'var(--amber)', 
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' 
         }}>16</div>
-        <span>16 EYES Farm House</span>
+        <span style={{ fontWeight: 600, fontSize: '15px', whiteSpace: 'nowrap' }}>16 EYES Farm House</span>
       </div>
 
       {/* Nav Menu */}
@@ -70,7 +70,7 @@ const Sidebar = () => {
             to={item.path} 
             className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
           >
-            {item.icon}
+            {React.cloneElement(item.icon, { size: 18 })}
             <span>{item.label}</span>
           </Link>
         ))}
@@ -85,6 +85,9 @@ const Sidebar = () => {
           <span className="username">{user.name || user.username || 'Admin'}</span>
           <span className="role">{user.role || 'SuperAdmin'}</span>
         </div>
+        <button onClick={handleLogout} style={{ marginLeft: 'auto', background: 'none', color: 'var(--nav-text)' }}>
+          <LogOut size={16} />
+        </button>
       </div>
     </div>
   );
@@ -98,7 +101,7 @@ const Header = () => {
 
   return (
     <div className="header">
-      {/* Breadcrumb */}
+      {/* Breadcrumb Left */}
       <div className="flex items-center gap-2" style={{ fontSize: '13px', opacity: 0.8 }}>
         <span>Home</span>
         <ChevronRight size={14} />
@@ -152,7 +155,7 @@ function App() {
         <Route path="/expenses" element={<PrivateRoute><Expenses /></PrivateRoute>} />
         <Route path="/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
         <Route path="/users" element={<PrivateRoute><UsersPage /></PrivateRoute>} />
-        <Route path="/activity" element={<PrivateRoute><div className="card"><h2>Activity Log</h2><p>Coming soon...</p></div></PrivateRoute>} />
+        <Route path="/activity" element={<PrivateRoute><div className="card"><h1>Activity Log</h1><p className="subtitle">Track system events and actions</p></div></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
       </Routes>

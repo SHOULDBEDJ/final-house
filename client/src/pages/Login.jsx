@@ -10,6 +10,7 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const navigate = useNavigate();
 
   // CHECK 10: Route Guard - Auto-redirect if already logged in
@@ -19,7 +20,7 @@ const Login = () => {
       navigate('/');
     }
 
-    // CHECK 11: Remember Me Persistence - Read stored user
+    // CHECK 11: Remember Me Persistence - Read stored user on mount
     const rememberedUser = localStorage.getItem('farmhouse_remembered_user');
     if (rememberedUser) {
       setUsername(rememberedUser);
@@ -30,10 +31,15 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
     
-    // CHECK 9: Basic Validation
-    if (!username || !password) {
-      setError('Please enter both username and password.');
+    // CHECK 9: Validation
+    const errors = {};
+    if (!username) errors.username = 'Username is required';
+    if (!password) errors.password = 'Password is required';
+    
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -46,7 +52,7 @@ const Login = () => {
       localStorage.setItem('farmhouse_token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
-      // CHECK 11: Handle Remember Me
+      // CHECK 11: Handle Remember Me persistence
       if (rememberMe) {
         localStorage.setItem('farmhouse_remembered_user', username);
       } else {
@@ -66,16 +72,16 @@ const Login = () => {
     <div className="login-page">
       <div className="login-card">
         {/* CHECK 3: Logo Block */}
-        <div className="login-logo-circle">
-          16
-        </div>
-        <div className="login-title">
-          Booking & Financial Management
+        <div className="login-logo-block">
+          <div className="logo-placeholder">16</div>
+          <div className="login-logo-text">
+            BOOKING & FINANCIAL MANAGEMENT
+          </div>
         </div>
 
         {/* CHECK 7: Error Message */}
         {error && (
-          <div className="error-card">
+          <div className="error-message-card">
             {error}
           </div>
         )}
@@ -83,26 +89,31 @@ const Login = () => {
         <form onSubmit={handleLogin}>
           {/* CHECK 4: Username Field */}
           <div className="form-group">
-            <label>Username</label>
+            <label style={{ color: fieldErrors.username ? 'var(--red)' : '#777' }}>USERNAME</label>
             <input 
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
-              autoComplete="username"
+              placeholder="Enter username"
+              style={{ borderColor: fieldErrors.username ? 'var(--red)' : 'var(--input-border)' }}
             />
+            {fieldErrors.username && (
+              <span style={{ color: 'var(--red)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                {fieldErrors.username}
+              </span>
+            )}
           </div>
 
           {/* CHECK 4: Password Field */}
           <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label>Password</label>
+            <label style={{ color: fieldErrors.password ? 'var(--red)' : '#777' }}>PASSWORD</label>
             <div className="input-with-icon">
               <input 
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                autoComplete="current-password"
+                placeholder="Enter password"
+                style={{ borderColor: fieldErrors.password ? 'var(--red)' : 'var(--input-border)' }}
               />
               <button 
                 type="button" 
@@ -112,14 +123,19 @@ const Login = () => {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+            {fieldErrors.password && (
+              <span style={{ color: 'var(--red)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                {fieldErrors.password}
+              </span>
+            )}
           </div>
 
           {/* CHECK 5: Remember Me */}
-          <div className="flex items-center gap-2 mb-4" style={{ cursor: 'pointer' }} onClick={() => setRememberMe(!rememberMe)}>
+          <div className="flex items-center gap-2 mb-6" style={{ cursor: 'pointer' }} onClick={() => setRememberMe(!rememberMe)}>
             <input 
               type="checkbox" 
               checked={rememberMe}
-              onChange={() => {}} // Handled by div click
+              onChange={() => {}} // Controlled by div click
               style={{ width: '14px', height: '14px', accentColor: 'var(--navy)', cursor: 'pointer' }}
             />
             <span style={{ fontSize: '13px', color: '#555' }}>Remember me</span>

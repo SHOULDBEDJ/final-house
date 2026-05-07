@@ -7,21 +7,20 @@ import {
   Clock,
   ArrowUpRight,
   ArrowDownRight,
-  Users,
   CheckCircle2
 } from 'lucide-react';
 
 const StatCard = ({ title, value, icon, accent, trend }) => (
-  <div className={`card stat-card accent-${accent}`}>
+  <div className={`stat-card accent-${accent}`}>
     <div className="stat-icon-circle" style={{ 
-      backgroundColor: accent === 'amber' ? 'rgba(196, 146, 11, 0.1)' : 'rgba(25, 135, 84, 0.1)',
-      color: accent === 'amber' ? 'var(--amber)' : 'var(--green)'
+      backgroundColor: accent === 'pending' ? 'rgba(196, 146, 11, 0.1)' : 'rgba(25, 135, 84, 0.1)',
+      color: accent === 'pending' ? 'var(--amber)' : 'var(--green)'
     }}>
       {icon}
     </div>
     <div className="stat-content">
       <span className="number">{value}</span>
-      <span className="label">{title}</span>
+      <span className="label-caps" style={{ marginTop: '4px' }}>{title}</span>
     </div>
     {trend && (
       <div style={{ 
@@ -58,63 +57,63 @@ const Dashboard = () => {
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-8">
         <h1>Dashboard Overview</h1>
-        <p className="subtitle">Real-time statistics for THE 16 EYES Farm House</p>
+        <p className="subtitle">Real-time business statistics for THE 16 EYES Farm House</p>
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
         <StatCard 
-          title="TOTAL BOOKINGS" 
+          title="Total Bookings" 
           value={stats.totalBookings} 
           icon={<CalendarDays size={20} />} 
-          accent="amber"
+          accent="pending"
           trend={12}
         />
         <StatCard 
-          title="CONFIRMED" 
+          title="Confirmed" 
           value={stats.totalBookings - stats.pendingBookings} 
           icon={<CheckCircle2 size={20} />} 
-          accent="green"
+          accent="confirmed"
         />
         <StatCard 
-          title="TOTAL REVENUE" 
+          title="Total Revenue" 
           value={`₹${stats.totalIncome.toLocaleString()}`} 
           icon={<TrendingUp size={20} />} 
-          accent="green"
+          accent="financial"
           trend={8}
         />
         <StatCard 
-          title="PENDING PAYMENTS" 
+          title="Pending Payments" 
           value={stats.pendingBookings} 
           icon={<Clock size={20} />} 
-          accent="amber"
+          accent="pending"
         />
       </div>
 
-      <div className="grid mt-6" style={{ gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+      <div className="grid mt-8" style={{ gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
         <div className="card">
           <div className="flex justify-between items-center mb-6">
             <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Recent Activity</h2>
-            <button className="btn-amber" style={{ fontSize: '12px' }}>View All</button>
+            <button className="btn-amber-toggle">View All</button>
           </div>
           <div className="flex flex-col gap-4">
-            <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px' }}>
-              No recent activity found.
+            <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '60px' }}>
+              No recent system activity found.
             </p>
           </div>
         </div>
 
         <div className="card">
-          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '20px' }}>Quick Actions</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px' }}>Quick Actions</h2>
           <div className="flex flex-col gap-3">
-            <button className="btn-primary w-full" style={{ padding: '12px' }}>
+            <button className="btn-primary w-full" style={{ padding: '12px', justifyContent: 'center' }}>
               <span style={{ fontSize: '18px' }}>+</span> NEW BOOKING
             </button>
-            <button className="btn-primary w-full" style={{ padding: '12px', background: 'transparent', border: '1px solid var(--navy)', color: 'var(--navy)' }}>
+            <button className="btn-inactive-toggle w-full" style={{ padding: '12px', justifyContent: 'center' }}>
               RECORD INCOME
             </button>
-            <button className="btn-danger w-full" style={{ padding: '12px' }}>
+            <button className="btn-danger w-full" style={{ padding: '12px', justifyContent: 'center' }}>
               ADD EXPENSE
             </button>
           </div>

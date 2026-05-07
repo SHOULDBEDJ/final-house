@@ -33,21 +33,21 @@ const Income = () => {
     e.preventDefault();
     try {
       await api.post('/income', formData);
-      toast.success('Income recorded');
+      toast.success('Income record saved');
       setShowModal(false);
       setFormData({ category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] });
       fetchData();
     } catch (error) {
-      toast.error('Failed to record income');
+      toast.error('Failed to save record');
     }
   };
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-8">
         <div>
           <h1>Income</h1>
-          <p className="subtitle">Track and manage venue revenue</p>
+          <p className="subtitle">Track and manage venue revenue streams</p>
         </div>
         <button className="btn-primary" onClick={() => setShowModal(true)}>
           <Plus size={18} /> RECORD INCOME
@@ -55,7 +55,7 @@ const Income = () => {
       </div>
 
       <div className="card" style={{ padding: '0' }}>
-        <div style={{ overflowX: 'auto' }}>
+        <div className="table-container">
           <table>
             <thead>
               <tr>
@@ -71,12 +71,12 @@ const Income = () => {
                   <td>{new Date(item.date).toLocaleDateString('en-GB')}</td>
                   <td><span className="badge badge-confirmed">{item.category.toUpperCase()}</span></td>
                   <td style={{ color: 'var(--text-muted)' }}>{item.description}</td>
-                  <td style={{ color: 'var(--green)', fontWeight: 600 }}>+₹{item.amount.toLocaleString()}</td>
+                  <td className="advance-green">+₹{item.amount.toLocaleString()}</td>
                 </tr>
               ))}
               {data.length === 0 && !loading && (
                 <tr>
-                  <td colSpan="4" className="text-center" style={{ padding: '40px' }}>No records found</td>
+                  <td colSpan="4" className="text-center" style={{ padding: '40px' }}>No income records found.</td>
                 </tr>
               )}
             </tbody>
@@ -93,7 +93,7 @@ const Income = () => {
             </div>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>Transaction Date</label>
+                <label>Date</label>
                 <input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} required />
               </div>
               <div className="form-group">
@@ -101,7 +101,7 @@ const Income = () => {
                 <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} required>
                   <option value="">Select Category</option>
                   <option value="Booking">Booking Payment</option>
-                  <option value="Event">Event Fees</option>
+                  <option value="Event">Event Fee</option>
                   <option value="Food">Food & Catering</option>
                   <option value="Other">Other Revenue</option>
                 </select>
@@ -115,7 +115,7 @@ const Income = () => {
                 <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} rows={3} style={{ height: 'auto', padding: '12px' }}></textarea>
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
-                <button type="button" className="btn-danger" onClick={() => setShowModal(false)}>CANCEL</button>
+                <button type="button" className="btn-inactive-toggle" onClick={() => setShowModal(false)}>CANCEL</button>
                 <button type="submit" className="btn-primary">SAVE RECORD</button>
               </div>
             </form>

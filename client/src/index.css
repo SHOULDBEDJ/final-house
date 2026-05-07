@@ -42,14 +42,17 @@ body {
   font-size: 14px;
   font-weight: 400;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Typography */
 h1 { font-size: 26px; font-weight: 600; color: var(--amber); margin-bottom: 4px; }
 .subtitle { font-size: 14px; color: var(--text-muted); font-weight: 400; }
 .label-caps { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; color: var(--text-muted); text-transform: uppercase; }
+.body-text { font-size: 14px; weight: 400; color: #1a1a1a; }
+.stat-number { font-size: 26px; font-weight: 600; }
 
-/* Layout */
+/* Layout Structure */
 .app-layout {
   display: flex;
   min-height: 100vh;
@@ -65,7 +68,7 @@ h1 { font-size: 26px; font-weight: 600; color: var(--amber); margin-bottom: 4px;
   top: 0;
   display: flex;
   flex-direction: column;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .main-wrapper {
@@ -73,6 +76,7 @@ h1 { font-size: 26px; font-weight: 600; color: var(--amber); margin-bottom: 4px;
   flex: 1;
   display: flex;
   flex-direction: column;
+  background-color: var(--cream);
 }
 
 .header {
@@ -83,6 +87,9 @@ h1 { font-size: 26px; font-weight: 600; color: var(--amber); margin-bottom: 4px;
   justify-content: space-between;
   padding: 0 32px;
   color: var(--white);
+  position: sticky;
+  top: 0;
+  z-index: 900;
 }
 
 .content-area {
@@ -91,7 +98,7 @@ h1 { font-size: 26px; font-weight: 600; color: var(--amber); margin-bottom: 4px;
   flex: 1;
 }
 
-/* Sidebar Components */
+/* Sidebar Navigation */
 .sidebar-logo {
   padding: 24px 20px;
   display: flex;
@@ -119,21 +126,21 @@ h1 { font-size: 26px; font-weight: 600; color: var(--amber); margin-bottom: 4px;
 .nav-item i, .nav-item svg { width: 18px; height: 18px; color: var(--nav-text); }
 
 .nav-item:hover { background-color: rgba(255,255,255,0.05); color: var(--white); }
-.nav-item:hover svg { color: var(--white); }
 
 .nav-item.active {
   background-color: rgba(255,255,255,0.08);
   color: var(--white);
-  border-left: 3px solid #198754;
+  border-left: 3px solid #198754; /* 3px solid green left-border */
 }
 .nav-item.active svg { color: var(--white); }
 
 .sidebar-footer {
-  padding: 20px;
+  padding: 16px 20px;
   border-top: 1px solid rgba(255,255,255,0.1);
   display: flex;
   align-items: center;
   gap: 12px;
+  background-color: rgba(0,0,0,0.1);
 }
 
 .sidebar-footer .user-avatar {
@@ -145,14 +152,16 @@ h1 { font-size: 26px; font-weight: 600; color: var(--amber); margin-bottom: 4px;
   align-items: center;
   justify-content: center;
   font-weight: 600;
+  font-size: 13px;
+  color: white;
 }
 
 .sidebar-footer .user-info { display: flex; flex-direction: column; }
-.sidebar-footer .username { font-size: 13px; font-weight: 500; }
+.sidebar-footer .username { font-size: 13px; font-weight: 500; color: white; }
 .sidebar-footer .role { font-size: 11px; color: var(--nav-text); }
 
 /* Buttons */
-button { cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+button { cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; outline: none; }
 
 .btn-primary {
   background-color: var(--navy);
@@ -161,8 +170,7 @@ button { cursor: pointer; border: none; transition: all 0.2s; display: inline-fl
   border-radius: var(--radius-md);
   font-weight: 500;
 }
-
-.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-primary:hover { opacity: 0.9; }
 
 .btn-danger {
   background-color: var(--danger);
@@ -171,22 +179,35 @@ button { cursor: pointer; border: none; transition: all 0.2s; display: inline-fl
   border-radius: var(--radius-md);
   font-weight: 500;
 }
+.btn-danger:hover { opacity: 0.9; }
 
-.btn-amber {
+.btn-amber-toggle {
   background-color: var(--amber);
   color: var(--white);
   padding: 6px 12px;
   border-radius: var(--radius-sm);
+  font-size: 12px;
 }
 
-.btn-icon {
+.btn-inactive-toggle {
+  background-color: white;
+  border: 1px solid #ddd;
+  color: #555;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+
+.btn-action-circle {
   width: 32px;
   height: 32px;
   border-radius: 50%;
   border: 1px solid #ddd;
   background: white;
   justify-content: center;
+  padding: 0;
 }
+.btn-action-circle i, .btn-action-circle svg { font-size: 15px; }
 
 /* Cards & Stats */
 .card {
@@ -200,13 +221,27 @@ button { cursor: pointer; border: none; transition: all 0.2s; display: inline-fl
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   position: relative;
   overflow: hidden;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #E8E5DF;
 }
 
-.stat-card.accent-amber { border-left: 4px solid var(--amber); }
-.stat-card.accent-green { border-left: 4px solid var(--green); }
+.stat-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.stat-card.accent-pending::before { background-color: var(--amber); }
+.stat-card.accent-financial::before { background-color: var(--green); }
+.stat-card.accent-confirmed::before { background-color: var(--green); }
 
 .stat-icon-circle {
   width: 40px;
@@ -217,15 +252,15 @@ button { cursor: pointer; border: none; transition: all 0.2s; display: inline-fl
   justify-content: center;
 }
 
-.stat-content .number { font-size: 26px; font-weight: 600; display: block; }
-.stat-content .label { font-size: 12px; color: var(--text-muted); }
+.stat-content { display: flex; flex-direction: column; }
+.stat-content .number { font-size: 26px; font-weight: 600; line-height: 1.2; }
+.stat-content .label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
 /* Tables */
+.table-container { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 
-thead tr {
-  background-color: var(--gray-bg);
-}
+thead tr { background-color: var(--gray-bg); }
 
 th {
   padding: 12px 16px;
@@ -238,7 +273,7 @@ th {
 }
 
 td {
-  padding: 16px;
+  padding: 12px 16px;
   font-size: 13.5px;
   color: var(--text-main);
   border-bottom: 1px solid var(--border-light);
@@ -250,17 +285,18 @@ tr:hover td { background-color: #FAFAF8; }
 .order-link { color: var(--amber); text-decoration: none; font-weight: 500; }
 .order-link:hover { text-decoration: underline; }
 
-.text-pending { color: var(--red); font-weight: 600; }
-.text-paid { color: var(--green); font-weight: 600; }
+.balance-red { color: var(--red); font-weight: 600; }
+.advance-green { color: var(--green); font-weight: 600; }
 
-/* Badges */
+/* Badges (Border/Text only) */
 .badge {
-  padding: 4px 12px;
+  padding: 4px 10px;
   border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
   display: inline-block;
   border: 1px solid transparent;
+  background: transparent;
 }
 
 .badge-confirmed { border-color: var(--green); color: var(--green); }
@@ -284,14 +320,14 @@ input, select, textarea {
   height: 44px;
   background-color: var(--input-bg);
   border: 1px solid var(--input-border);
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   padding: 0 14px;
   font-size: 14px;
   color: var(--text-main);
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
-input:focus { outline: none; border-color: var(--amber); }
+input:focus { outline: none; border-color: var(--amber); background-color: white; }
 
 /* Modals */
 .modal-overlay {
@@ -301,7 +337,7 @@ input:focus { outline: none; border-color: var(--amber); }
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .modal-card {
@@ -310,7 +346,7 @@ input:focus { outline: none; border-color: var(--amber); }
   width: 90%;
   max-width: 600px;
   padding: 24px;
-  position: relative;
+  box-shadow: var(--shadow-lg);
 }
 
 .modal-header {
@@ -323,10 +359,18 @@ input:focus { outline: none; border-color: var(--amber); }
 .modal-header h2 { font-size: 18px; font-weight: 600; }
 .modal-close { font-size: 24px; color: var(--text-muted); cursor: pointer; }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-full { grid-column: span 2; }
+
 /* Login Page Specifics */
 .login-page {
   min-height: 100vh;
-  background-color: #EDE9E0;
+  background-color: #EDE9E0; /* CHECK 1: Full viewport, soft warm-gray */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -336,15 +380,22 @@ input:focus { outline: none; border-color: var(--amber); }
 
 .login-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 16px; /* CHECK 2: 16px radius */
   padding: 40px;
   width: 100%;
   max-width: 420px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08); /* CHECK 2: subtle shadow */
 }
 
-.login-logo-circle {
-  width: 90px;
+.login-logo-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.logo-placeholder {
+  width: 90px; /* CHECK 3: ~90px */
   height: 90px;
   border-radius: 50%;
   background: var(--navy);
@@ -354,16 +405,16 @@ input:focus { outline: none; border-color: var(--amber); }
   justify-content: center;
   font-size: 32px;
   font-weight: 700;
-  margin: 0 auto 20px;
+  margin-bottom: 16px;
 }
 
-.login-title {
-  text-align: center;
+.login-logo-text {
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 13px;
+  letter-spacing: 0.12em; /* CHECK 3: 0.12em */
+  font-size: 13px; /* CHECK 3: 13px */
   color: #555;
-  margin-bottom: 32px;
+  text-align: center;
+  font-weight: 500;
 }
 
 .input-with-icon { position: relative; }
@@ -372,26 +423,29 @@ input:focus { outline: none; border-color: var(--amber); }
   right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: #999;
+  color: #999; /* CHECK 4: color #999 */
   background: none;
   padding: 0;
+  border: none;
+  cursor: pointer;
 }
 
-.login-footer {
-  margin-top: 24px;
-  text-align: center;
-  font-size: 12px;
-  color: #999;
-}
-
-.error-card {
-  background: #FEE2E2;
-  color: #DC3545;
+.error-message-card {
+  background: #FEE2E2; /* CHECK 7: bg #FEE2E2 */
+  color: #DC3545; /* CHECK 7: text #DC3545 */
   border: 1px solid #FECACA;
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 13px;
   margin-bottom: 16px;
+  text-align: center;
+}
+
+.login-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 12px; /* CHECK 8: 12px */
+  color: #999;
 }
 
 .spinner {
