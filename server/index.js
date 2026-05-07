@@ -73,6 +73,42 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // --- BOOKING ROUTES ---
+app.get('/api/bookings/summary', authenticateToken, async (req, res) => {
+  try {
+    const data = await Promise.all([
+      db.execute('SELECT COUNT(*) as count FROM bookings'),
+      db.execute("SELECT COUNT(*) as count FROM bookings WHERE status = 'confirmed'"),
+      db.execute("SELECT SUM(total_amount - advance_paid - discount) as balance FROM bookings WHERE status = 'pending'"),
+      db.execute('SELECT SUM(advance_paid) as advance FROM bookings'),
+      db.execute('SELECT SUM(amount) as income FROM income'),
+      db.execute('SELECT (IFNULL(SUM(amount), 0) - (SELECT IFNULL(SUM(amount), 0) FROM expenses)) as cash FROM income')
+    ]);
+
+    res.json({
+      total: data[0].rows[0].count || 0,
+      confirmed: data[1].rows[0].count || 0,
+      pendingBalance: data[2].rows[0].balance || 0,
+      advanceCollected: data[3].rows[0].advance || 0,
+      totalIncome: data[4].rows[0].income || 0,
+      cashInHand: data[5].rows[0].cash || 0
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch('/api/bookings/:id/confirm', authenticateToken, async (req, res) => {
+  try {
+    await db.execute({
+      sql: "UPDATE bookings SET status = 'confirmed' WHERE id = ?",
+      args: [req.params.id]
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/bookings', authenticateToken, async (req, res) => {
   try {
     const result = await db.execute('SELECT * FROM bookings ORDER BY check_in DESC');

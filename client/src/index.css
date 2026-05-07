@@ -592,3 +592,93 @@ input:focus { outline: none; border-color: var(--amber); background-color: white
 .main-wrapper.expanded {
   margin-left: 64px;
 }
+
+/* --- BOOKINGS PAGE SPECIFIC --- */
+.order-link {
+  color: #C4920B;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: text-decoration 0.2s;
+}
+
+.order-link:hover {
+  text-decoration: underline;
+}
+
+.btn-amber-toggle {
+  background-color: #C4920B;
+  color: white;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-inactive-toggle {
+  background-color: transparent;
+  color: #555;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-inactive-toggle:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.badge-cancelled {
+  border: 1px solid #DC3545;
+  color: #DC3545;
+  background: transparent;
+}
+
+.stat-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.accent-pending {
+  border-left: 4px solid #C4920B !important;
+}
+
+.accent-financial {
+  border-left: 4px solid #198754 !important;
+}
+
+.balance-red {
+  color: #DC3545;
+  font-weight: 600;
+}
+
+.advance-green {
+  color: #198754;
+  font-weight: 600;
+}
+
+.input-with-icon {
+  position: relative;
+}
+
+/* Pagination Tweak */
+.btn-inactive-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
