@@ -7,116 +7,255 @@ import {
   Clock,
   ArrowUpRight,
   ArrowDownRight,
-  CheckCircle2
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  FileText,
+  Grid,
+  List,
+  User,
+  Zap,
+  Layout
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
-const StatCard = ({ title, value, icon, accent, trend }) => (
-  <div className={`stat-card accent-${accent}`}>
-    <div className="stat-icon-circle" style={{ 
-      backgroundColor: accent === 'pending' ? 'rgba(196, 146, 11, 0.1)' : 'rgba(25, 135, 84, 0.1)',
-      color: accent === 'pending' ? 'var(--amber)' : 'var(--green)'
-    }}>
+const StatCard = ({ title, value, icon, accent, color }) => (
+  <div className="card stat-card" style={{ borderLeft: `4px solid ${accent}` }}>
+    <div className="stat-icon-circle" style={{ backgroundColor: `${accent}15`, color: accent }}>
       {icon}
     </div>
     <div className="stat-content">
       <span className="number">{value}</span>
-      <span className="label-caps" style={{ marginTop: '4px' }}>{title}</span>
+      <span className="label-caps">{title}</span>
     </div>
-    {trend && (
-      <div style={{ 
-        position: 'absolute', right: '20px', top: '20px', 
-        fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '2px',
-        color: trend > 0 ? 'var(--green)' : 'var(--red)'
-      }}>
-        {trend > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-        {Math.abs(trend)}%
-      </div>
-    )}
   </div>
 );
 
 const Dashboard = () => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [availability, setAvailability] = useState({});
   const [stats, setStats] = useState({
     totalBookings: 0,
-    totalIncome: 0,
-    totalExpenses: 0,
-    pendingBookings: 0
+    todayBookings: 0,
+    monthlyBookings: 0,
+    weeklyBookings: 0,
+    upcomingBookings: 0
   });
+  const [recentBookings, setRecentBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [statsRes, bookingsRes] = await Promise.all([
+        api.get('/dashboard/stats'),
+        api.get('/bookings?limit=5')
+      ]);
+      setStats(statsRes.data);
+      setRecentBookings(bookingsRes.data);
+    } catch (error) {
+      toast.error('Failed to fetch dashboard data');
+    }
+  };
+
+  const fetchMonthAvailability = async () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const availabilityData = {};
+    const promises = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      promises.push(
+        api.get(`/bookings/availability?date=${dateStr}`).then(res => {
+          availabilityData[dateStr] = res.data.slots;
+        })
+      );
+    }
+
+    await Promise.all(promises);
+    setAvailability(availabilityData);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await api.get('/dashboard/stats');
-        setStats(response.data);
-      } catch (error) {
-        console.error('Failed to fetch stats');
-      }
-    };
-    fetchStats();
-  }, []);
+    fetchDashboardData();
+    fetchMonthAvailability();
+  }, [currentDate]);
+
+  const renderCalendar = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const days = [];
+
+    // Header
+    const weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+    // Padding for first week
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="calendar-day padding"></div>);
+    }
+
+    // Days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const slots = availability[dateStr] || [];
+      const isToday = new Date().toISOString().split('T')[0] === dateStr;
+      const allBooked = slots.length > 0 && slots.every(s => !s.available);
+      const allAvailable = slots.length > 0 && slots.every(s => s.available);
+
+      days.push(
+        <div key={day} className={`calendar-day ${isToday ? 'today' : ''} ${allBooked ? 'fully-booked' : ''}`}>
+          <span className="day-number">{day}</span>
+          <div className="slot-pills">
+            {allAvailable ? (
+              <span className="slot-status-text available">Available</span>
+            ) : allBooked ? (
+              <span className="slot-status-text booked">Booked</span>
+            ) : (
+              slots.map(slot => (
+                <div 
+                  key={slot.slotId} 
+                  className={`slot-pill ${slot.available ? 'available' : 'booked'}`}
+                  style={{ backgroundColor: slot.available ? 'var(--green)' : '#eee' }}
+                  title={slot.slotName}
+                ></div>
+              ))
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="calendar-grid">
+        {weekDays.map(d => <div key={d} className="calendar-header-cell">{d}</div>)}
+        {days}
+      </div>
+    );
+  };
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1>Dashboard Overview</h1>
-        <p className="subtitle">Real-time business statistics for THE 16 EYES Farm House</p>
-      </div>
-
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
-        <StatCard 
-          title="Total Bookings" 
-          value={stats.totalBookings} 
-          icon={<CalendarDays size={20} />} 
-          accent="pending"
-          trend={12}
-        />
-        <StatCard 
-          title="Confirmed" 
-          value={stats.totalBookings - stats.pendingBookings} 
-          icon={<CheckCircle2 size={20} />} 
-          accent="confirmed"
-        />
-        <StatCard 
-          title="Total Revenue" 
-          value={`₹${stats.totalIncome.toLocaleString()}`} 
-          icon={<TrendingUp size={20} />} 
-          accent="financial"
-          trend={8}
-        />
-        <StatCard 
-          title="Pending Payments" 
-          value={stats.pendingBookings} 
-          icon={<Clock size={20} />} 
-          accent="pending"
-        />
-      </div>
-
-      <div className="grid mt-8" style={{ gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
-        <div className="card">
-          <div className="flex justify-between items-center mb-6">
-            <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Recent Activity</h2>
-            <button className="btn-amber-toggle">View All</button>
+    <div className="dashboard-container">
+      {/* Calendar Section */}
+      <div className="card mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-4">
+            <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Monthly Calendar</h2>
+            <div className="flex items-center gap-2">
+              <button className="btn-icon" onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)))}>
+                <ChevronLeft size={16} />
+              </button>
+              <span style={{ fontWeight: 600, minWidth: '100px', textAlign: 'center' }}>
+                {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </span>
+              <button className="btn-icon" onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)))}>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            <button className="btn-inactive-toggle" onClick={() => setCurrentDate(new Date())}>Today</button>
           </div>
-          <div className="flex flex-col gap-4">
-            <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '60px' }}>
-              No recent system activity found.
-            </p>
+          <div className="flex bg-gray-100 p-1 rounded-md">
+            <button className="btn-amber-toggle" style={{ padding: '6px 16px' }}>Month</button>
+            <button className="btn-inactive-toggle" style={{ border: 'none', background: 'transparent' }}>Week</button>
+            <button className="btn-inactive-toggle" style={{ border: 'none', background: 'transparent' }}>Day</button>
           </div>
         </div>
 
-        <div className="card">
-          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px' }}>Quick Actions</h2>
-          <div className="flex flex-col gap-3">
-            <button className="btn-primary w-full" style={{ padding: '12px', justifyContent: 'center' }}>
-              <span style={{ fontSize: '18px' }}>+</span> NEW BOOKING
-            </button>
-            <button className="btn-inactive-toggle w-full" style={{ padding: '12px', justifyContent: 'center' }}>
-              RECORD INCOME
-            </button>
-            <button className="btn-danger w-full" style={{ padding: '12px', justifyContent: 'center' }}>
-              ADD EXPENSE
-            </button>
+        {renderCalendar()}
+
+        {/* Legend */}
+        <div className="flex gap-4 mt-6 flex-wrap">
+          <div className="flex items-center gap-2"><div className="dot" style={{ background: '#198754' }}></div> <span style={{ fontSize: '12px' }}>Morng Slot</span></div>
+          <div className="flex items-center gap-2"><div className="dot" style={{ background: '#C4920B' }}></div> <span style={{ fontSize: '12px' }}>Eve to Eve</span></div>
+          <div className="flex items-center gap-2"><div className="dot" style={{ background: '#1C2D5E' }}></div> <span style={{ fontSize: '12px' }}>Photoshoot</span></div>
+          <div className="flex items-center gap-2"><div className="dot" style={{ background: '#3B82F6' }}></div> <span style={{ fontSize: '12px' }}>Eve Slot</span></div>
+          <div className="flex items-center gap-2"><div className="dot" style={{ background: '#DC3545' }}></div> <span style={{ fontSize: '12px' }}>Full day</span></div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid mb-8" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px' }}>
+        <StatCard title="Total Bookings" value={stats.totalBookings} icon={<Layout size={20} />} accent="var(--navy)" />
+        <StatCard title="Today's Bookings" value={stats.todayBookings || 0} icon={<CalendarDays size={20} />} accent="var(--navy)" />
+        <StatCard title="Monthly Bookings" value={stats.monthlyBookings || 0} icon={< trendingUp size={20} />} accent="var(--navy)" />
+        <StatCard title="Weekly Bookings" value={stats.weeklyBookings || 0} icon={<Layout size={20} />} accent="var(--navy)" />
+      </div>
+      <div className="grid mb-8" style={{ gridTemplateColumns: '1fr', gap: '24px' }}>
+        <StatCard title="Upcoming Bookings" value={stats.upcomingBookings || 0} icon={<Clock size={20} />} accent="var(--navy)" />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex gap-4 mb-8">
+        <button className="btn-primary"><Plus size={16} /> Add Booking</button>
+        <button className="btn-primary" style={{ background: '#198754' }}><Plus size={16} /> Add Income</button>
+        <button className="btn-danger"><Plus size={16} /> Add Expense</button>
+        <button className="btn-inactive-toggle" style={{ padding: '10px 20px' }}>Full Calendar</button>
+        <button className="btn-inactive-toggle" style={{ padding: '10px 20px' }}>Report</button>
+      </div>
+
+      {/* Recent Bookings Table */}
+      <div className="card">
+        <div className="flex justify-between items-center mb-6">
+          <h2 style={{ fontSize: '16px', fontWeight: 600 }}>Recent Bookings</h2>
+          <div className="flex items-center gap-4">
+            <div className="flex gap-2">
+              <Grid size={18} style={{ color: 'var(--amber)' }} />
+              <List size={18} style={{ color: '#ccc' }} />
+            </div>
+            <a href="/bookings" style={{ color: 'var(--amber)', fontSize: '14px', fontWeight: 500 }}>View All</a>
           </div>
+        </div>
+
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>ORDER ID</th>
+                <th>CUSTOMER</th>
+                <th>DATE & SLOT</th>
+                <th>AGREED</th>
+                <th>BALANCE</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentBookings.map((booking) => (
+                <tr key={booking.id}>
+                  <td><a href="#" className="order-link">16EYE{String(booking.id).padStart(2, '0')}</a></td>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="user-avatar" style={{ width: '34px', height: '34px', fontSize: '13px' }}>
+                        {booking.customer_name.charAt(0).toUpperCase()}
+                      </div>
+                      <span style={{ fontWeight: 500 }}>{booking.customer_name}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div>{new Date(booking.check_in).toLocaleDateString('en-GB')}</div>
+                    <div style={{ fontSize: '12px', color: '#888' }}>Morng Slot</div>
+                  </td>
+                  <td style={{ color: 'var(--green)', fontWeight: 600 }}>₹{booking.total_amount.toLocaleString()}</td>
+                  <td>
+                    {booking.total_amount - booking.advance_paid > 0 ? (
+                      <span className="balance-red">₹{(booking.total_amount - booking.advance_paid).toLocaleString()}</span>
+                    ) : (
+                      <span className="advance-green">✓ Paid</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={`badge badge-${booking.status === 'confirmed' ? 'confirmed' : 'pending'}`}>
+                      {booking.status.toUpperCase()}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

@@ -7,6 +7,24 @@ import PDFDocument from 'pdfkit';
 
 dotenv.config();
 
+// Master Slot Definitions
+const SLOTS = [
+  { id: 1, name: 'Morng Slot', start: '11:00', end: '19:00', crossesMidnight: false, color: '#198754' },
+  { id: 2, name: 'Eve to Eve slot', start: '20:00', end: '19:00', crossesMidnight: true, color: '#C4920B' },
+  { id: 3, name: 'Photoshoot Slot', start: '14:00', end: '18:00', crossesMidnight: false, color: '#1C2D5E' },
+  { id: 4, name: 'Eve Slot', start: '20:00', end: '10:00', crossesMidnight: true, color: '#3B82F6' },
+  { id: 5, name: 'Full day', start: '11:00', end: '10:00', crossesMidnight: true, color: '#DC3545' }
+];
+
+// Helper to convert Date + Time string to Date object
+const getSlotDateTime = (dateStr, timeStr, offsetDays = 0) => {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + offsetDays);
+  const [h, m] = timeStr.split(':');
+  d.setHours(parseInt(h), parseInt(m), 0, 0);
+  return d;
+};
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -142,6 +160,48 @@ app.post('/api/expenses', authenticateToken, async (req, res) => {
       args: [category, amount, description, date]
     });
     res.status(201).json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- AVAILABILITY ROUTES ---
+app.get('/api/bookings/availability', authenticateToken, async (req, res) => {
+  const { date } = req.query;
+  if (!date) return res.status(400).json({ error: 'Date is required' });
+
+  try {
+    const d = new Date(date);
+    const yesterday = new Date(d); yesterday.setDate(d.getDate() - 1);
+    const tomorrow = new Date(d); tomorrow.setDate(d.getDate() + 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    const bookings = await db.execute({
+      sql: "SELECT * FROM bookings WHERE status = 'confirmed' AND (date = ? OR date = ? OR date = ?)",
+      args: [yesterdayStr, date, tomorrowStr]
+    });
+
+    const availability = SLOTS.map(slot => {
+      const reqStart = getSlotDateTime(date, slot.start);
+      const reqEnd = getSlotDateTime(date, slot.end, slot.crossesMidnight ? 1 : 0);
+      let conflict = false;
+      let reason = '';
+
+      for (const b of bookings.rows) {
+        const bSlot = SLOTS.find(s => s.id === b.slot_id) || SLOTS[0];
+        const bStart = getSlotDateTime(b.date, bSlot.start);
+        const bEnd = getSlotDateTime(b.date, bSlot.end, bSlot.crossesMidnight ? 1 : 0);
+
+        if (reqStart < bEnd && bStart < reqEnd) {
+          conflict = true;
+          reason = `Conflict with ${b.customer_name} (${bSlot.name})`;
+          break;
+        }
+      }
+      return { slotId: slot.id, slotName: slot.name, color: slot.color, available: !conflict, reason };
+    });
+    res.json({ slots: availability });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
