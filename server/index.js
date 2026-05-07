@@ -361,28 +361,36 @@ app.get('/api/bookings/availability', authenticateToken, async (req, res) => {
   if (!date) return res.status(400).json({ error: 'Date is required' });
 
   try {
+    const slotsResult = await db.execute('SELECT * FROM time_slots');
+    const slots = slotsResult.rows;
+    
     const d = new Date(date);
     const yesterday = new Date(d); yesterday.setDate(d.getDate() - 1);
     const tomorrow = new Date(d); tomorrow.setDate(d.getDate() + 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-    const bookings = await db.execute({
+    // Get all confirmed bookings for relevant window
+    const bookingsResult = await db.execute({
       sql: "SELECT * FROM bookings WHERE status = 'confirmed' AND (date = ? OR date = ? OR date = ?)",
       args: [yesterdayStr, date, tomorrowStr]
     });
+    const bookings = bookingsResult.rows;
 
-    const availability = SLOTS.map(slot => {
-      const reqStart = getSlotDateTime(date, slot.start);
-      const reqEnd = getSlotDateTime(date, slot.end, slot.crossesMidnight ? 1 : 0);
+    const availability = slots.map(slot => {
+      const reqStart = getSlotDateTime(date, slot.startTime);
+      const reqEnd = getSlotDateTime(date, slot.endTime, slot.crossesMidnight ? 1 : 0);
       let conflict = false;
       let reason = '';
 
-      for (const b of bookings.rows) {
-        const bSlot = SLOTS.find(s => s.id === b.slot_id) || SLOTS[0];
-        const bStart = getSlotDateTime(b.date, bSlot.start);
-        const bEnd = getSlotDateTime(b.date, bSlot.end, bSlot.crossesMidnight ? 1 : 0);
+      for (const b of bookings) {
+        const bSlot = slots.find(s => s.id === b.slot_id);
+        if (!bSlot) continue;
 
+        const bStart = getSlotDateTime(b.date, bSlot.startTime);
+        const bEnd = getSlotDateTime(b.date, bSlot.endTime, bSlot.crossesMidnight ? 1 : 0);
+
+        // Standard Interval Conflict: (StartA < EndB) AND (StartB < EndA)
         if (reqStart < bEnd && bStart < reqEnd) {
           conflict = true;
           reason = `Conflict with ${b.customer_name} (${bSlot.name})`;
